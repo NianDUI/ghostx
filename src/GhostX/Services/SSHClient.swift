@@ -10,6 +10,8 @@ final class SSHClient: ObservableObject {
 
     let config: SessionConfig
     let credential: Credential?
+    var tunnels: [TunnelConfig] = []
+    var proxy: ProxyConfig?
 
     @Published var isConnected = false
     @Published var lastError: String?
@@ -34,14 +36,30 @@ final class SSHClient: ObservableObject {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/ssh")
         var args = [
-            "-tt",                          // force PTY allocation
+            "-tt",
             "-o", "StrictHostKeyChecking=accept-new",
             "-o", "ServerAliveInterval=\(config.keepAliveInterval)",
             "-o", "ServerAliveCountMax=3",
             "-o", "TCPKeepAlive=yes",
-            "-p", "\(config.port)",
-            "\(config.username)@\(config.host)",
         ]
+
+        // Proxy support
+        if let proxyCmd = proxy?.sshProxyCommand {
+            args.append(contentsOf: ["-o", proxyCmd])
+        }
+
+        // Tunnel forwarding flags
+        for tunnel in tunnels where tunnel.enabled {
+            args.append(tunnel.type.flag)
+            args.append(tunnel.sshFlag)
+        }
+
+        // Port
+        args.append(contentsOf: ["-p", "\(config.port)"])
+
+        // Destination
+        args.append("\(config.username)@\(config.host)")
+
 
         // Key-based auth
         if config.authMethod == .key, let keyPath = config.privateKeyPath {

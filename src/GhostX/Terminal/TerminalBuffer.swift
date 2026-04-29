@@ -42,8 +42,10 @@ final class TerminalBuffer {
     private var currentUnderline = false
     private var currentBlink = false
     private var currentInverse = false
-
-    // Scrollback viewing offset (0 = bottom/newest, positive = into history)
+    private var savedCursorX = 0
+    private var savedCursorY = 0
+    private var scrollTop = 0
+    private var scrollBottom = 0
     private(set) var scrollOffset: Int = 0
     private var totalScrollback: Int { scrollback.count }
 
@@ -206,8 +208,33 @@ final class TerminalBuffer {
         case .scrollDown(let n):
             scroll(by: -n)
 
-        case .setCursorStyle(_):
-            break
+        case .setCursorStyle(_): break
+
+        case .deleteCharacters(let n):
+            deleteChars(n)
+
+        case .insertCharacters(let n):
+            insertChars(n)
+
+        case .eraseCharacters(let n):
+            for i in 0..<min(n, cols - cursorX) {
+                grid[cursorY][cursorX + i] = .empty
+            }
+
+        case .setScrollRegion(let top, let bottom):
+            scrollTop = max(0, top - 1)
+            scrollBottom = bottom > 0 ? min(rows - 1, bottom - 1) : rows - 1
+
+        case .cursorPositionReport:
+            break // Response sent via write_pty callback
+
+        case .saveCursor:
+            savedCursorX = cursorX
+            savedCursorY = cursorY
+
+        case .restoreCursor:
+            cursorX = savedCursorX
+            cursorY = savedCursorY
 
         default:
             break
@@ -304,6 +331,26 @@ final class TerminalBuffer {
         case 2: // entire line
             grid[cursorY] = Array(repeating: .empty, count: cols)
         default: break
+        }
+    }
+
+    private func deleteChars(_ n: Int) {
+        let count = min(n, cols - cursorX)
+        for x in cursorX..<(cols - count) {
+            grid[cursorY][x] = grid[cursorY][x + count]
+        }
+        for x in (cols - count)..<cols {
+            grid[cursorY][x] = .empty
+        }
+    }
+
+    private func insertChars(_ n: Int) {
+        let count = min(n, cols - cursorX)
+        for x in stride(from: cols - 1, through: cursorX + count, by: -1) {
+            grid[cursorY][x] = grid[cursorY][x - count]
+        }
+        for x in cursorX..<(cursorX + count) {
+            grid[cursorY][x] = .empty
         }
     }
 

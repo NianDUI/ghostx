@@ -11,6 +11,7 @@ struct SessionConfig: Identifiable, Codable, Hashable {
     var privateKeyPath: String?
     var groupID: UUID?
     var keepAliveInterval: Int = 60
+    var proxy: ProxyConfig?
     var loginScript: String?
     var terminalType: String = "xterm-256color"
     var notes: String?

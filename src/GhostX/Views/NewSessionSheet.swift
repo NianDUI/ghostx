@@ -13,6 +13,10 @@ struct NewSessionSheet: View {
     @State private var authMethod: AuthMethod = .key
     @State private var privateKeyPath: String = "~/.ssh/id_ed25519"
     @State private var loginScript: String = ""
+    @State private var proxyEnabled: Bool = false
+    @State private var proxyType: ProxyConfig.ProxyType = .socks5
+    @State private var proxyHost: String = "127.0.0.1"
+    @State private var proxyPort: String = "1080"
     @State private var connectOnSave: Bool = true
 
     var body: some View {
@@ -57,6 +61,24 @@ struct NewSessionSheet: View {
                 }
 
                 TextField("Login Script:", text: $loginScript, prompt: Text("Commands to run after login"))
+
+                // Proxy settings
+                DisclosureGroup("Proxy Settings") {
+                    Toggle("Enable Proxy", isOn: $proxyEnabled)
+                    if proxyEnabled {
+                        Picker("Type:", selection: $proxyType) {
+                            Text("SOCKS5").tag(ProxyConfig.ProxyType.socks5)
+                            Text("SOCKS4").tag(ProxyConfig.ProxyType.socks4)
+                            Text("HTTP").tag(ProxyConfig.ProxyType.http)
+                        }
+                        HStack {
+                            TextField("Proxy Host:", text: $proxyHost)
+                            Text(":").foregroundColor(.secondary)
+                            TextField("Port:", text: $proxyPort)
+                                .frame(width: 60)
+                        }
+                    }
+                }
 
                 Toggle("Connect after saving", isOn: $connectOnSave)
             }
@@ -117,14 +139,12 @@ struct NewSessionSheet: View {
             username: username.trimmingCharacters(in: .whitespaces),
             authMethod: authMethod,
             privateKeyPath: authMethod == .key ? privateKeyPath : nil,
+            proxy: proxyEnabled ? ProxyConfig(
+                enabled: true, type: proxyType,
+                host: proxyHost, port: UInt16(proxyPort) ?? 1080
+            ) : nil,
             loginScript: loginScript.isEmpty ? nil : loginScript
         )
-
-        if name.isEmpty {
-            config.name = "\(config.username)@\(config.host)"
-        }
-
-        try? repo.save(config)
 
         if connectOnSave {
             tabManager.openTab(for: config)

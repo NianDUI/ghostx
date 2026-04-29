@@ -16,7 +16,11 @@ enum ANSIEvent {
     case setCursorVisible(Bool)
     case setCursorStyle(Int)
     case scrollUp(Int), scrollDown(Int)
-    case oscCommand(Int, String) // Operating System Command
+    case oscCommand(Int, String)
+    case deleteCharacters(Int), insertCharacters(Int), eraseCharacters(Int)
+    case setScrollRegion(top: Int, bottom: Int)
+    case cursorPositionReport
+    case saveCursor, restoreCursor
     case ignore
 }
 
@@ -64,16 +68,16 @@ enum ANSIParser {
                     oscCommand = 0
                     oscString = ""
                 case "7":
-                    handler(.ignore) // DECSC - save cursor
+                    handler(.saveCursor)
                     state = .normal
                 case "8":
-                    handler(.ignore) // DECRC - restore cursor
+                    handler(.restoreCursor)
                     state = .normal
                 case "D":
-                    handler(.cursorDown(1)) // IND
+                    handler(.cursorDown(1))
                     state = .normal
                 case "M":
-                    handler(.cursorUp(1)) // RI - reverse index
+                    handler(.cursorUp(1))
                     state = .normal
                 default:
                     state = .normal
@@ -144,22 +148,20 @@ enum ANSIParser {
         case "K": handler(.eraseLine(n0))
         case "L": handler(.scrollDown(n0 > 0 ? n0 : 1))
         case "M": handler(.scrollUp(n0 > 0 ? n0 : 1))
-        case "P": handler(.ignore) // DCH
-        case "@": handler(.ignore) // ICH
+        case "P": handler(.deleteCharacters(max(1, n0)))
+        case "@": handler(.insertCharacters(max(1, n0)))
         case "S": handler(.scrollUp(max(1, n0)))
         case "T": handler(.scrollDown(max(1, n0)))
         case "h", "l":
-            // Set/reset modes - mostly ignore for now
             if privateMarker == "?" {
                 handleDECMode(n0, set: final == "h", handler: handler)
             }
         case "m": handleSGR(params, handler: handler)
         case "n":
-            if n0 == 6 { /* cursor position report - ignored */ }
+            if n0 == 6 { handler(.cursorPositionReport) }
         case "r":
-            // Set scrolling region - ignored for now
-            handler(.ignore)
-        case "X": handler(.ignore) // ECH
+            handler(.setScrollRegion(top: max(1, n0), bottom: n1 > 0 ? n1 : 0))
+        case "X": handler(.eraseCharacters(max(1, n0)))
         case let c where c.isLowercase:
             handler(.ignore)
         default:

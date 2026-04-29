@@ -16,6 +16,12 @@ final class TabManager: ObservableObject {
     func openTab(for session: SessionConfig) {
         let credential = CredentialStore.shared.load(host: session.host, username: session.username)
         let client = SSHClient(config: session, credential: credential)
+        client.proxy = session.proxy
+        // Load tunnels for this session
+        if let data = UserDefaults.standard.data(forKey: "GhostX.tunnels.\(session.id.uuidString)"),
+           let tunnels = try? JSONDecoder().decode([TunnelConfig].self, from: data) {
+            client.tunnels = tunnels
+        }
         let tab = TerminalTab(
             id: UUID(),
             sessionID: session.id,

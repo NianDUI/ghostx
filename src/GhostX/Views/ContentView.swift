@@ -8,6 +8,7 @@ struct ContentView: View {
     @State private var showSFTP = false
     @State private var showTriggers = false
     @State private var showThemes = false
+    @State private var showTunnels = false
     @State private var selectedGroupID: UUID?
 
     var body: some View {
@@ -52,6 +53,10 @@ struct ContentView: View {
                     Image(systemName: "paintpalette")
                         .help("Terminal Themes")
                 }
+                Button(action: { showTunnels = true }) {
+                    Image(systemName: "point.3.connected.trianglepath.dotted")
+                        .help("Port Forwarding & Tunnels")
+                }
             }
         }
         .onAppear {
@@ -68,6 +73,11 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showThemes) {
             ThemePickerView()
+        }
+        .sheet(isPresented: $showTunnels) {
+            if let activeTab = tabManager.tabs.first(where: { $0.id == tabManager.activeTabID }) {
+                TunnelManagerView(sessionID: activeTab.sessionID)
+            }
         }
     }
 }
