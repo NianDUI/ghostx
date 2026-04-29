@@ -1,0 +1,21 @@
+# Build artifacts
+build/
+src/.build/
+*.o
+*.dylib
+*.a
+
+# IDE
+.DS_Store
+*.xcodeproj/
+xcuserdata/
+
+# References (large cloned repos)
+reference/
+
+# Logs
+logs/
+
+# Binary in GhostXBridge
+src/GhostXBridge/libghostty-vt.dylib
+src/GhostX/Terminal/libghostty-vt.dylib
