@@ -186,7 +186,7 @@ struct TabButton: View {
     }
 }
 
-/// Terminal view using native NSView rendering with ANSI support
+/// Terminal view using Ghostty (primary) or NativeTerminalView (fallback)
 struct TerminalView: View {
     @ObservedObject var client: SSHClient
     let config: SessionConfig
@@ -195,26 +195,40 @@ struct TerminalView: View {
     @State private var triggerEngine: TriggerEngine?
     @State private var scriptRecorder: ScriptRecorder?
 
+    @ViewBuilder
+    private var terminalContent: some View {
+        if terminalState.useGhostty {
+            GhosttyTerminalDisplay(bridge: terminalState.bridge,
+                onKeyPress: { [self] key in
+                    terminalState.bridge.resetScroll(); logger?.logInput(key)
+                    scriptRecorder?.recordInput(key); client.send(key)
+                },
+                onResize: { [self] cols, rows in
+                    terminalState.resize(cols: cols, rows: rows)
+                    client.resize(cols: cols, rows: rows)
+                }
+            ).background(Color.black)
+        } else {
+            TerminalDisplay(buffer: terminalState.buffer,
+                onKeyPress: { [self] key in
+                    terminalState.buffer.resetScroll(); logger?.logInput(key)
+                    scriptRecorder?.recordInput(key); client.send(key)
+                },
+                onResize: { [self] cols, rows in
+                    terminalState.resize(cols: cols, rows: rows)
+                    client.resize(cols: cols, rows: rows)
+                }
+            ).background(Color.black)
+        }
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             GeometryReader { geometry in
-                TerminalDisplay(
-                    buffer: terminalState.buffer,
-                    onKeyPress: { key in
-                        terminalState.buffer.resetScroll()
-                        logger?.logInput(key)
-                        scriptRecorder?.recordInput(key)
-                        client.send(key)
-                    },
-                    onResize: { cols, rows in
-                        terminalState.resize(cols: cols, rows: rows)
-                        client.resize(cols: cols, rows: rows)
-                    }
-                )
-                .background(Color.black)
-                .onAppear {
-                let sz = geometry.size
-                terminalState.updateFromFrame(width: sz.width, height: sz.height)
+                terminalContent
+                    .onAppear { terminalState.updateFromFrame(width: geometry.size.width, height: geometry.size.height) }
+            }
+            .onAppear {
 
                 // Start session logging
                 let sessionLogger = SessionLogger(sessionID: config.id, host: config.host)
@@ -247,14 +261,13 @@ struct TerminalView: View {
                 self.triggerEngine = engine
 
                 client.onOutput = { [weak terminalState, weak logger, weak engine] data in
-                    terminalState?.buffer.write(data)
-                    terminalState?.title = terminalState?.buffer.title ?? ""
+                    if let ts = terminalState {
+                        if ts.useGhostty { ts.bridge.feedInput(data) }
+                        ts.buffer.write(data)
+                        ts.title = ts.useGhostty ? ts.bridge.title : ts.buffer.title
+                    }
                     logger?.logOutput(data)
                     engine?.feed(data)
-                }
-            }
-                .onChange(of: geometry.size) { _, newSize in
-                    terminalState.updateFromFrame(width: newSize.width, height: newSize.height)
                 }
             }
 
@@ -267,7 +280,7 @@ struct TerminalView: View {
                     .font(.caption)
                     .foregroundColor(.secondary)
                 Spacer()
-                Text("\(terminalState.buffer.cols)×\(terminalState.buffer.rows)")
+                Text("\(terminalState.currentCols)×\(terminalState.currentRows)")
                     .font(.caption.monospacedDigit())
                     .foregroundColor(.secondary)
                 Text(terminalState.title)
@@ -283,13 +296,14 @@ struct TerminalView: View {
     }
 }
 
-/// Observable state holder for TerminalBuffer
+/// Observable state holder — Ghostty TerminalBridge primary, TerminalBuffer fallback
 class TerminalState: ObservableObject {
-    let buffer = TerminalBuffer(cols: 80, rows: 24)
+    let bridge = TerminalBridge(cols: 80, rows: 24)
+    let buffer = TerminalBuffer(cols: 80, rows: 24) // fallback
     @Published var title: String = ""
-    private var currentCols = 80
-    private var currentRows = 24
-    private var titleObserver: NSObjectProtocol?
+    private(set) var currentCols = 80
+    private(set) var currentRows = 24
+    var useGhostty: Bool { bridge.dylibLoaded }
 
     func updateFromFrame(width: CGFloat, height: CGFloat) {
         let cellW: CGFloat = 9
@@ -303,6 +317,7 @@ class TerminalState: ObservableObject {
         guard cols != currentCols || rows != currentRows else { return }
         currentCols = cols
         currentRows = rows
+        bridge.resize(cols: UInt16(cols), rows: UInt16(rows))
         buffer.resize(cols: cols, rows: rows)
     }
 }

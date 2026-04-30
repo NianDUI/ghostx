@@ -4,6 +4,7 @@ import Foundation
 /// Used by GhosttyTerminalView for rendering
 final class TerminalBridge {
     static weak var activeBridge: TerminalBridge?
+    private(set) var dylibLoaded = false
     private var terminalPtr: UnsafeMutableRawPointer?
     private var renderStatePtr: UnsafeMutableRawPointer?
     private var dylibHandle: UnsafeMutableRawPointer?
@@ -142,6 +143,7 @@ final class TerminalBridge {
         for p in paths { if let p, (h = dlopen(p, RTLD_NOW)) != nil { break } }
         guard let h else { return }
         dylibHandle = h
+        dylibLoaded = true
 
         typealias T1 = @convention(c) (UInt16, UInt16, UInt32) -> UnsafeMutableRawPointer?
         typealias T2 = @convention(c) (UnsafeMutableRawPointer?) -> Void
