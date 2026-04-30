@@ -205,9 +205,11 @@ class CommandBus {
 
 ## Progress Tracking
 
-- **Last updated**: 2026-04-30 21:35
-- **Current phase**: ALL PHASES COMPLETE ✅ + OPTIMIZATION ROUND
-- **Status**: Full-featured SSH client; native libssh2 SFTP; zero warnings
+- **Last updated**: 2026-04-30 22:00
+- **Status**: Phase 0-5 ✅, Phase 6 60%, Phase 7-10 planned
+- **Build**: 0.62s, zero warnings, .app 3.5MB
+- **GitHub**: git@github.com:NianDUI/ghostx.git (8 commits)
+- **Total files**: 42 source files + 4 docs + C bridge headers
 
 ### Phase Status
 - Phase 0: COMPLETED ✅
@@ -293,64 +295,53 @@ Based on joint analysis by Claude + Codex-unsafe of:
 
 ### New Phases
 
-### Phase 6 — Dockable Workspace [ ]
-**Goal**: Redesign main layout with splittable terminal, dockable panels, tab groups.
+### Phase 6 — Dockable Workspace [IN_PROGRESS 60%]
 **Priority**: P0 (highest UI impact)
-**Deliverables**:
-- [ ] Terminal split panes (vertical/horizontal, drag divider)
-- [ ] Panel dock/undock (sidebar, bottom SFTP, right quick commands)
+- [x] Terminal split panes (SplitManager + SplitTreeView, recursive tree)
+- [x] Collapsible sidebar with toggle button
+- [x] Right-click context menu (Copy/Paste/Select All)
+- [x] Middle-click paste support
+- [x] Sidebar width adjustable
+- [ ] Panel dock/undock (bottom SFTP, right quick commands as dockable)
 - [ ] Panel auto-hide with hover reveal
 - [ ] Tab drag-to-reorder, drag-to-split
-- [ ] Layout state persistence (UserDefaults)
+- [ ] Layout state persistence (UserDefaults — save split tree)
 - [ ] Session icon customization
-**Files**: `DockableView.swift`, `SplitManager.swift`, `LayoutState.swift`
 
 ### Phase 7 — Session Center 2.0 [ ]
-**Goal**: Enterprise-grade session management with search, tags, auth profiles.
-**Deliverables**:
-- [ ] Fuzzy search in session list (filter by name/host/username)
-- [ ] Session tags (colored labels for categorization)
-- [ ] Bulk edit (select multiple, change common properties)
-- [ ] CSV + JSON import/export with file picker
+- [x] Session tags field in model (SessionConfig.tags)
+- [x] Session usage stats (lastConnectedAt, connectCount)
+- [ ] Fuzzy search in session list (search bar filtering by name/host/user)
+- [ ] Tag-based filtering and colored tag display
+- [ ] Bulk edit (select multiple sessions, change common properties)
+- [ ] CSV + JSON import/export with file picker (JSON done, CSV partial)
 - [ ] Auth profiles (reusable credential configurations)
-- [ ] Session usage statistics (last connected, connect count)
-**Files**: `SessionSearchBar.swift`, `AuthProfile.swift`, `BulkEditView.swift`
 
 ### Phase 8 — SFTP Dual-Pane [ ]
-**Goal**: Docked SFTP panel with local+remote side-by-side, drag-drop transfers.
-**Deliverables**:
-- [ ] Bottom-docked SFTP panel with local/remote split
+- [ ] Bottom-docked SFTP panel (local left + remote right split)
 - [ ] Drag-drop file upload from Finder to remote
-- [ ] Download with progress indicator
+- [ ] Download with progress indicator + cancel
 - [ ] Transfer queue (multiple files, sequential/parallel)
-- [ ] File conflict resolution (overwrite/skip/rename)
-- [ ] Inline preview for text files
+- [ ] File conflict resolution dialog (overwrite/skip/rename)
+- [ ] Inline text preview for remote files
 - [ ] Hex viewer for binary files
-**Files**: `SFTPDualPane.swift`, `TransferQueue.swift`, `HexViewer.swift`
 
 ### Phase 9 — Terminal Professional [ ]
-**Goal**: Horizontal scroll, column selection, large buffer, hex view.
-**Deliverables**:
 - [ ] Horizontal scrollbar when content exceeds terminal width
-- [ ] Column/block text selection (Alt+drag)
+- [ ] Column/block text selection (Alt+Mouse drag)
 - [ ] Increase scrollback buffer to 100K lines
 - [ ] Triple-click selects entire line
 - [ ] Customizable double-click word separators
 - [ ] Terminal print (save visible content as PDF)
-- [ ] Hex viewer popup for selected data
-**Files**: `TerminalScrollView.swift`, `ColumnSelectionHandler.swift`
+- [ ] Mouse right-button action config (menu/paste/send)
 
 ### Phase 10 — Advanced Protocols & Security [ ]
-**Goal**: TELNET, RDP launcher, Kerberos, script recording.
-**Deliverables**:
-- [ ] TELNET protocol support
-- [ ] RDP session launcher (open via system RDP client or embedded)
+- [ ] TELNET protocol support (libtelnet or custom)
+- [ ] RDP session launcher (open via system RDP client)
 - [ ] PKCS#11 smart card auth
 - [ ] GSSAPI/Kerberos authentication
 - [ ] Master password to encrypt all stored credentials
-- [ ] Script recording (record input to file, replay)
-- [ ] Script parameter support
-**Files**: `TelnetClient.swift`, `KerberosAuth.swift`, `ScriptRecorder.swift`
+- [ ] Script recording (record input → replay)
 
 ---
 
