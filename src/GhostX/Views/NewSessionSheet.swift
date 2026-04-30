@@ -18,6 +18,8 @@ struct NewSessionSheet: View {
     @State private var proxyType: ProxyConfig.ProxyType = .socks5
     @State private var proxyHost: String = "127.0.0.1"
     @State private var proxyPort: String = "1080"
+    @State private var selectedAuthProfile: UUID?
+    @StateObject private var authManager = AuthProfileManager()
     @State private var connectOnSave: Bool = true
 
     var body: some View {
@@ -52,6 +54,22 @@ struct NewSessionSheet: View {
                 }
 
                 TextField("Username:", text: $username)
+
+                if !authManager.profiles.isEmpty {
+                    Picker("Auth Profile:", selection: $selectedAuthProfile) {
+                        Text("None").tag(nil as UUID?)
+                        ForEach(authManager.profiles) { p in
+                            Text(p.name).tag(p.id as UUID?)
+                        }
+                    }
+                    .onChange(of: selectedAuthProfile) { _, id in
+                        if let id, let p = authManager.profiles.first(where: { $0.id == id }) {
+                            username = p.username
+                            authMethod = p.authMethod
+                            privateKeyPath = p.privateKeyPath ?? privateKeyPath
+                        }
+                    }
+                }
 
                 Picker("Auth:", selection: $authMethod) {
                     Text("Key").tag(AuthMethod.key)
@@ -155,6 +173,7 @@ struct NewSessionSheet: View {
             protocolType: protocolType,
             username: username.trimmingCharacters(in: .whitespaces),
             authMethod: authMethod,
+            authProfileID: selectedAuthProfile,
             privateKeyPath: authMethod == .key ? privateKeyPath : nil,
             proxy: proxyEnabled ? ProxyConfig(
                 enabled: true, type: proxyType,

@@ -64,13 +64,104 @@ struct SettingsView: View {
             .tabItem { Text("Appearance") }
             .padding()
 
+            AuthProfileSettingsView()
+                .tabItem { Text("Auth Profiles") }
+                .padding()
+
             KeyManagementView()
                 .tabItem { Text("SSH Keys") }
                 .padding()
         }
-        .frame(width: 450, height: 300)
+        .frame(width: 500, height: 350)
     }
 }
+
+/// Auth profile management in settings
+struct AuthProfileSettingsView: View {
+    @StateObject private var manager = AuthProfileManager()
+    @State private var showEditor = false
+    @State private var editingProfile: AuthProfile?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Authentication Profiles").font(.title3)
+            Text("Reusable credential configs applied to multiple sessions").font(.caption).foregroundColor(.secondary)
+
+            List(manager.profiles) { profile in
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(profile.name).font(.body)
+                        Text("\(profile.username) — \(profile.authMethod == .key ? "Key" : "Password")")
+                            .font(.caption).foregroundColor(.secondary)
+                    }
+                    Spacer()
+                    Button("Edit") { editingProfile = profile }
+                        .buttonStyle(.borderless)
+                }
+                .padding(.vertical, 2)
+            }
+            .listStyle(.plain)
+            .frame(height: 120)
+
+            HStack {
+                Button("New Profile...") {
+                    editingProfile = AuthProfile(name: "")
+                    showEditor = true
+                }
+                .buttonStyle(.bordered)
+                Spacer()
+            }
+        }
+        .sheet(item: $editingProfile) { profile in
+            AuthProfileEditor(manager: manager, profile: profile)
+        }
+    }
+}
+
+struct AuthProfileEditor: View {
+    @ObservedObject var manager: AuthProfileManager
+    @State var profile: AuthProfile
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(spacing: 12) {
+            Text(profile.name.isEmpty ? "New Auth Profile" : "Edit Auth Profile").font(.title2)
+            Form {
+                TextField("Name", text: $profile.name)
+                TextField("Username", text: $profile.username)
+                Picker("Auth Method", selection: $profile.authMethod) {
+                    Text("Key").tag(AuthMethod.key)
+                    Text("Password").tag(AuthMethod.password)
+                    Text("Agent").tag(AuthMethod.agent)
+                }
+                if profile.authMethod == .key {
+                    HStack {
+                        TextField("Private Key", text: Binding(
+                            get: { profile.privateKeyPath ?? "" },
+                            set: { profile.privateKeyPath = $0.isEmpty ? nil : $0 }
+                        ))
+                        Button("Browse...") {
+                            let panel = NSOpenPanel()
+                            panel.allowedContentTypes = [.data]
+                            if panel.runModal() == .OK { profile.privateKeyPath = panel.url?.path }
+                        }
+                    }
+                }
+            }
+            .formStyle(.grouped)
+            HStack {
+                Button("Cancel") { dismiss() }
+                Spacer()
+                Button("Save") { manager.save(profile); dismiss() }
+                    .buttonStyle(.borderedProminent).disabled(profile.name.isEmpty)
+            }
+        }
+        .padding()
+        .frame(width: 420, height: 320)
+    }
+}
+
+
 
 /// SSH key management in settings
 struct KeyManagementView: View {

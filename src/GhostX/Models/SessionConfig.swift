@@ -9,6 +9,7 @@ struct SessionConfig: Identifiable, Codable, Hashable {
     var protocolType: ProtocolType = .ssh
     var username: String
     var authMethod: AuthMethod = .key
+    var authProfileID: UUID?
     var privateKeyPath: String?
     var groupID: UUID?
     var keepAliveInterval: Int = 60
