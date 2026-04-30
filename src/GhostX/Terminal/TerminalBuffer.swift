@@ -83,7 +83,7 @@ final class TerminalBuffer {
         cursorY = min(cursorY, rows - 1)
     }
 
-    init(cols: Int = 80, rows: Int = 24, maxScrollback: Int = 5000) {
+    init(cols: Int = 80, rows: Int = 24, maxScrollback: Int = 100_000) {
         self.cols = cols
         self.rows = rows
         self.maxScrollback = maxScrollback

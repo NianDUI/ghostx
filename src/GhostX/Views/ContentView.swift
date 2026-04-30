@@ -121,12 +121,24 @@ struct ContentView: View {
     }
 }
 
-/// Left sidebar with session tree, quick connect, and import/export
+/// Left sidebar with session tree, quick connect, search, and import/export
 struct SessionSidebar: View {
     @ObservedObject var repo: SessionRepository
     @ObservedObject var tabManager: TabManager
     @Binding var selectedGroupID: UUID?
     @State private var quickHost: String = ""
+    @State private var searchText: String = ""
+
+    private var filteredSessions: [SessionConfig] {
+        let text = searchText.trimmingCharacters(in: .whitespaces).lowercased()
+        if text.isEmpty { return repo.sessions }
+        return repo.sessions.filter { session in
+            session.name.lowercased().contains(text) ||
+            session.host.lowercased().contains(text) ||
+            session.username.lowercased().contains(text) ||
+            session.tags.contains(where: { $0.lowercased().contains(text) })
+        }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -134,12 +146,32 @@ struct SessionSidebar: View {
             QuickConnectBar(repo: repo, tabManager: tabManager)
                 .padding(8)
 
+            // Search bar
+            HStack {
+                Image(systemName: "magnifyingglass")
+                    .foregroundColor(.secondary)
+                    .font(.caption)
+                TextField("Search sessions...", text: $searchText)
+                    .font(.caption)
+                    .textFieldStyle(.plain)
+                if !searchText.isEmpty {
+                    Button(action: { searchText = "" }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.caption)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(Color(NSColor.controlBackgroundColor))
+
             Divider()
 
             // Session tree
             List {
                 Section("Sessions") {
-                    ForEach(repo.sessions) { session in
+                    ForEach(filteredSessions) { session in
                         SessionRow(session: session, tabManager: tabManager, repo: repo)
                             .contextMenu {
                                 Button("Connect") { tabManager.openTab(for: session) }
@@ -205,6 +237,18 @@ struct SessionRow: View {
                 Text(session.connectionString)
                     .font(.caption)
                     .foregroundColor(.secondary)
+                if !session.tags.isEmpty {
+                    HStack(spacing: 2) {
+                        ForEach(session.tags.prefix(3), id: \.self) { tag in
+                            Text(tag)
+                                .font(.system(size: 8))
+                                .padding(.horizontal, 4)
+                                .padding(.vertical, 1)
+                                .background(Color.accentColor.opacity(0.2))
+                                .cornerRadius(3)
+                        }
+                    }
+                }
             }
             Spacer()
         }
