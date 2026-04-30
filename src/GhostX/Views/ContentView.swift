@@ -104,7 +104,8 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showSFTP) {
             if let activeTab = tabManager.tabs.first(where: { $0.id == tabManager.activeTabID }) {
-                SFTPPanel(config: activeTab.config, nativeClient: activeTab.client.nativeClient)
+                SFTPDualPane(config: activeTab.config, nativeClient: activeTab.client.nativeClient)
+                    .frame(width: 800, height: 500)
             }
         }
         .sheet(isPresented: $showTriggers) {

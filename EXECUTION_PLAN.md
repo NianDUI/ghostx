@@ -308,11 +308,11 @@ Based on joint analysis by Claude + Codex-unsafe of:
 - [ ] Layout state persistence (UserDefaults — save split tree)
 - [ ] Session icon customization
 
-### Phase 7 — Session Center 2.0 [ ]
+### Phase 7 — Session Center 2.0 [IN_PROGRESS 70%]
 - [x] Session tags field in model (SessionConfig.tags)
 - [x] Session usage stats (lastConnectedAt, connectCount)
-- [ ] Fuzzy search in session list (search bar filtering by name/host/user)
-- [ ] Tag-based filtering and colored tag display
+- [x] Fuzzy search in session list (filter by name/host/user/tags)
+- [x] Colored tag chips display in session rows
 - [ ] Bulk edit (select multiple sessions, change common properties)
 - [ ] CSV + JSON import/export with file picker (JSON done, CSV partial)
 - [ ] Auth profiles (reusable credential configurations)
