@@ -244,31 +244,22 @@ final class TerminalBuffer {
     // MARK: - Core operations
 
     private func putChar(_ ch: Character) {
-        guard ch != "\u{7}" else { return } // skip BEL
-        if ch == "\n" {
-            cursorX = 0
-            cursorDown()
-            return
-        }
-        if ch == "\r" {
-            cursorX = 0
-            return
-        }
+        // Clamp cursor to valid range
+        cursorX = max(0, min(cursorX, cols - 1))
+        cursorY = max(0, min(cursorY, rows - 1))
+
+        guard ch != "\u{7}" else { return }
+        if ch == "\n" { cursorX = 0; cursorDown(); return }
+        if ch == "\r" { cursorX = 0; return }
         if ch == "\t" {
             let spaces = 8 - (cursorX % 8)
             for _ in 0..<spaces { putChar(" ") }
             return
         }
-        if ch.asciiValue == 8 {
-            if cursorX > 0 { cursorX -= 1 }
-            return
-        }
+        if ch.asciiValue == 8 { if cursorX > 0 { cursorX -= 1 }; return }
         guard ch.isASCII else { return }
 
-        if cursorX >= cols {
-            cursorX = 0
-            cursorDown()
-        }
+        if cursorX >= cols { cursorX = 0; cursorDown() }
 
         grid[cursorY][cursorX] = Cell(
             character: ch,

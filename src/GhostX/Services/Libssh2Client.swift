@@ -317,7 +317,7 @@ final class Libssh2Client: ObservableObject {
         guard let openFn = _sftpOpen,
               let writeFn = _sftpWrite,
               let closeFn = _sftpClose,
-              let data = NSData(contentsOfFile: localPath) else { return false }
+              let data = try? Data(contentsOf: URL(fileURLWithPath: localPath)) else { return false }
 
         let handle = openFn(sftp, remotePath,
             UInt64(LIBSSH2_FXF_WRITE | LIBSSH2_FXF_CREAT | LIBSSH2_FXF_TRUNC),
@@ -326,8 +326,11 @@ final class Libssh2Client: ObservableObject {
         guard let handle = handle else { return false }
         defer { closeFn(handle) }
 
-        let ptr = data.bytes.bindMemory(to: CChar.self, capacity: data.count)
-        return writeFn(handle, ptr, data.count) == data.count
+        let result = data.withUnsafeBytes { ptr -> Int in
+            guard let base = ptr.bindMemory(to: CChar.self).baseAddress else { return -1 }
+            return writeFn(handle, base, data.count)
+        }
+        return result == data.count
     }
 
     deinit { disconnect(); if let h = dylib { dlclose(h) } }
