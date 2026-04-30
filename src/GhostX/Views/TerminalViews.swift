@@ -4,6 +4,7 @@ import SwiftUI
 final class TabManager: ObservableObject {
     @Published var tabs: [TerminalTab] = []
     @Published var activeTabID: UUID?
+    weak var splitManager: SplitManager?
 
     struct TerminalTab: Identifiable {
         let id: UUID
@@ -37,6 +38,15 @@ final class TabManager: ObservableObject {
         )
         tabs.append(tab)
         activeTabID = tab.id
+        // Sync with split manager
+        if let sm = splitManager {
+            if sm.root.isEmpty || sm.root.tabID == nil {
+                sm.root = .leaf(tabID: tab.id)
+                sm.focusedNodeID = sm.root.id
+            } else {
+                sm.splitCurrent(direction: .horizontal, newTabID: tab.id)
+            }
+        }
 
         Task {
             try? await client.connect()
@@ -48,8 +58,12 @@ final class TabManager: ObservableObject {
             tab.client.disconnect()
         }
         tabs.removeAll { $0.id == id }
+        splitManager?.closeTab(tabID: id)
         if activeTabID == id {
             activeTabID = tabs.last?.id
+            if let newID = activeTabID, let nodeID = splitManager?.nodeID(for: newID) {
+                splitManager?.focusLeaf(id: nodeID)
+            }
         }
     }
 

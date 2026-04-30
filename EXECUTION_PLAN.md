@@ -271,10 +271,90 @@ class CommandBus {
 - `design/` (architecture docs)
 - `logs/` (session logs)
 
+---
+
+## Phase 6-10: Xshell Parity Plan (2026-04-30)
+
+Based on joint analysis by Claude + Codex-unsafe of:
+- https://www.xshell.com/zh/xshell-all-features/
+- https://www.xshell.com/zh/xshell/
+- Web research on Xshell UI/UX patterns
+- Current GhostX gap analysis
+
+### Gap Analysis (Top 5)
+
+| # | Gap | Xshell | GhostX Current |
+|---|-----|--------|----------------|
+| 1 | **Dockable Workspace** | MDI with dockable panels, split panes, tab groups, auto-hide | Fixed HSplitView, no splits, no drag-reorder |
+| 2 | **Session Center 2.0** | Fuzzy search, tag labels, bulk CSV/XML import-export, auth profiles | Basic tree, JSON import only |
+| 3 | **SFTP Dual-Pane** | Docked bottom panel, local+remote side-by-side, drag-drop, transfer queue | Popover single-pane browser |
+| 4 | **Terminal Pro Features** | Horizontal scroll, column/block selection, >100K scrollback, hex viewer | Vertical scroll only, 5000 line buffer |
+| 5 | **Security & Extensions** | PKCS#11/GSSAPI/Kerberos, script recording, master password, auth profile propagation | Basic key+password, no Kerberos |
+
+### New Phases
+
+### Phase 6 — Dockable Workspace [ ]
+**Goal**: Redesign main layout with splittable terminal, dockable panels, tab groups.
+**Priority**: P0 (highest UI impact)
+**Deliverables**:
+- [ ] Terminal split panes (vertical/horizontal, drag divider)
+- [ ] Panel dock/undock (sidebar, bottom SFTP, right quick commands)
+- [ ] Panel auto-hide with hover reveal
+- [ ] Tab drag-to-reorder, drag-to-split
+- [ ] Layout state persistence (UserDefaults)
+- [ ] Session icon customization
+**Files**: `DockableView.swift`, `SplitManager.swift`, `LayoutState.swift`
+
+### Phase 7 — Session Center 2.0 [ ]
+**Goal**: Enterprise-grade session management with search, tags, auth profiles.
+**Deliverables**:
+- [ ] Fuzzy search in session list (filter by name/host/username)
+- [ ] Session tags (colored labels for categorization)
+- [ ] Bulk edit (select multiple, change common properties)
+- [ ] CSV + JSON import/export with file picker
+- [ ] Auth profiles (reusable credential configurations)
+- [ ] Session usage statistics (last connected, connect count)
+**Files**: `SessionSearchBar.swift`, `AuthProfile.swift`, `BulkEditView.swift`
+
+### Phase 8 — SFTP Dual-Pane [ ]
+**Goal**: Docked SFTP panel with local+remote side-by-side, drag-drop transfers.
+**Deliverables**:
+- [ ] Bottom-docked SFTP panel with local/remote split
+- [ ] Drag-drop file upload from Finder to remote
+- [ ] Download with progress indicator
+- [ ] Transfer queue (multiple files, sequential/parallel)
+- [ ] File conflict resolution (overwrite/skip/rename)
+- [ ] Inline preview for text files
+- [ ] Hex viewer for binary files
+**Files**: `SFTPDualPane.swift`, `TransferQueue.swift`, `HexViewer.swift`
+
+### Phase 9 — Terminal Professional [ ]
+**Goal**: Horizontal scroll, column selection, large buffer, hex view.
+**Deliverables**:
+- [ ] Horizontal scrollbar when content exceeds terminal width
+- [ ] Column/block text selection (Alt+drag)
+- [ ] Increase scrollback buffer to 100K lines
+- [ ] Triple-click selects entire line
+- [ ] Customizable double-click word separators
+- [ ] Terminal print (save visible content as PDF)
+- [ ] Hex viewer popup for selected data
+**Files**: `TerminalScrollView.swift`, `ColumnSelectionHandler.swift`
+
+### Phase 10 — Advanced Protocols & Security [ ]
+**Goal**: TELNET, RDP launcher, Kerberos, script recording.
+**Deliverables**:
+- [ ] TELNET protocol support
+- [ ] RDP session launcher (open via system RDP client or embedded)
+- [ ] PKCS#11 smart card auth
+- [ ] GSSAPI/Kerberos authentication
+- [ ] Master password to encrypt all stored credentials
+- [ ] Script recording (record input to file, replay)
+- [ ] Script parameter support
+**Files**: `TelnetClient.swift`, `KerberosAuth.swift`, `ScriptRecorder.swift`
+
+---
+
 ### Change Log
 - 2026-04-30 16:00: Initial plan created based on Claude + Codex discussion
-- 2026-04-30 16:15: 5 reference projects cloned for architecture study
-- 2026-04-30 16:30: Analyzed Ghostty macOS SurfaceView (2300+ lines), understood libghostty embedding pattern
-- 2026-04-30 16:45: libghostty-vt built from source (zig 0.15.2)
-- 2026-04-30 17:00: 15 Swift source files written for GhostX app skeleton
-- 2026-04-30 17:15: Package.swift fixing for compilation
+- 2026-04-30 21:40: Xshell parity analysis — Claude + Codex-unsafe joint research
+- 2026-04-30 21:45: Phase 6-10 plan added covering dockable UI, session center, SFTP dual-pane, terminal pro, advanced protocols

@@ -4,6 +4,8 @@ import SwiftUI
 struct ContentView: View {
     @StateObject private var sessionRepo = SessionRepository()
     @StateObject private var tabManager = TabManager()
+    @StateObject private var splitManager = SplitManager()
+    @State private var hasSetupSplit = false
     @State private var showComposePanel = false
     @State private var showSFTP = false
     @State private var showTriggers = false
@@ -22,10 +24,25 @@ struct ContentView: View {
             .frame(minWidth: 200, idealWidth: 260)
             .frame(maxWidth: 350)
 
-            // Right: Terminal area + optional bottom panel
+            // Right: Terminal area with splits + optional bottom panel
             VSplitView {
-                // Terminal tabs area
-                TerminalArea(tabManager: tabManager)
+                // Terminal with split support
+                if tabManager.tabs.isEmpty {
+                    VStack {
+                        Image(systemName: "terminal")
+                            .font(.system(size: 48))
+                            .foregroundColor(.secondary)
+                        Text("No sessions open")
+                            .font(.title2)
+                            .foregroundColor(.secondary)
+                        Text("Double-click a session in the sidebar or use Quick Connect")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    SplitTreeView(splitManager: splitManager, tabManager: tabManager, node: splitManager.root)
+                }
 
                 // Bottom: Compose panel (togglable)
                 if showComposePanel {
@@ -60,6 +77,7 @@ struct ContentView: View {
             }
         }
         .onAppear {
+            tabManager.splitManager = splitManager
             NSApp.setActivationPolicy(.regular)
             NSApp.activate(ignoringOtherApps: true)
         }
