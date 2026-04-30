@@ -1,4 +1,5 @@
 import Foundation
+import AppKit
 
 /// SSH connection manager. Delegates to Libssh2Client (native) or Process-based ssh (fallback).
 final class SSHClient: ObservableObject {
@@ -60,6 +61,13 @@ final class SSHClient: ObservableObject {
     private var storedTelnet: TelnetClient?
 
     func connect(terminalType: String = "xterm-256color") async throws {
+        if config.protocolType == .rdp {
+            // Launch system RDP client
+            let url = URL(string: "rdp://full%20address=s:\(config.host):\(config.port)&username=s:\(config.username)")!
+            NSWorkspace.shared.open(url)
+            connectionState = .connected; isConnected = true
+            return
+        }
         if config.protocolType == .telnet {
             let telnet = TelnetClient(host: config.host, port: config.port)
             telnet.onOutput = { [weak self] d in self?.onOutput?(d) }

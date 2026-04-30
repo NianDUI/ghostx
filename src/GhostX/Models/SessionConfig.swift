@@ -42,6 +42,7 @@ enum AuthMethod: String, Codable, CaseIterable {
 enum ProtocolType: String, Codable, CaseIterable {
     case ssh = "SSH"
     case telnet = "TELNET"
+    case rdp = "RDP"
 }
 
 /// Session folder/group for tree organization

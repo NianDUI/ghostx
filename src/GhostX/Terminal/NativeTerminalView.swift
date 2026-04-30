@@ -273,8 +273,66 @@ final class NativeTerminalView: NSView {
 
     // MARK: - Mouse & Context Menu
 
+    private var lastClickTime: TimeInterval = 0
+    private var clickCount = 0
+
     override func mouseDown(with event: NSEvent) {
         window?.makeFirstResponder(self)
+
+        // Triple-click detection
+        let now = event.timestamp
+        if now - lastClickTime < 0.3 { clickCount += 1 } else { clickCount = 1 }
+        lastClickTime = now
+
+        if event.modifierFlags.contains(.option) {
+            // Alt+drag: column/block selection start
+            isSelectingColumn = true
+            columnSelectStart = convert(event.locationInWindow, from: nil)
+        } else if clickCount >= 3 {
+            // Triple-click: select entire line
+            let pos = convert(event.locationInWindow, from: nil)
+            let row = Int((frame.height - pos.y - 4) / cellHeight)
+            if row >= 0 && row < buffer.rows {
+                // Select entire row via VT escape sequence
+                onKeyPress?("\u{1b}[\(row+1);1H\u{1b}[?47h")
+            }
+            clickCount = 0
+        }
+    }
+
+    override func mouseDragged(with event: NSEvent) {
+        if isSelectingColumn {
+            let pos = convert(event.locationInWindow, from: nil)
+            let minX = min(columnSelectStart.x, pos.x)
+            let maxX = max(columnSelectStart.x, pos.x)
+            let minY = min(columnSelectStart.y, pos.y)
+            let maxY = max(columnSelectStart.y, pos.y)
+
+            let startCol = max(0, Int((minX - 4) / cellWidth))
+            let endCol = max(0, Int((maxX - 4) / cellWidth))
+            let startRow = max(0, Int((frame.height - maxY - 4) / cellHeight))
+            let endRow = max(0, Int((frame.height - minY - 4) / cellHeight))
+
+            // Build block selection text
+            var selected: [String] = []
+            for y in startRow...min(endRow, buffer.rows - 1) {
+                var line = ""
+                for x in startCol...min(endCol, buffer.cols - 1) {
+                    line += String(buffer.snapshot().grid[min(y, buffer.rows-1)][min(x, buffer.cols-1)].character)
+                }
+                selected.append(line)
+            }
+            let text = selected.joined(separator: "\n")
+            if !text.trimmingCharacters(in: .whitespaces).isEmpty {
+                let pb = NSPasteboard.general; pb.clearContents(); pb.setString(text, forType: .string)
+            }
+        } else {
+            // Normal drag
+        }
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        if isSelectingColumn { isSelectingColumn = false }
     }
 
     override func rightMouseDown(with event: NSEvent) {

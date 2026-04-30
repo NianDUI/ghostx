@@ -33,10 +33,15 @@ struct NewSessionSheet: View {
                     Picker("Protocol:", selection: $protocolType) {
                         Text("SSH").tag(ProtocolType.ssh)
                         Text("TELNET").tag(ProtocolType.telnet)
+                        Text("RDP").tag(ProtocolType.rdp)
                     }
                     .pickerStyle(.segmented)
                     .onChange(of: protocolType) { _, newProto in
-                        port = newProto == .ssh ? "22" : "23"
+                        switch newProto {
+                        case .ssh: port = "22"
+                        case .telnet: port = "23"
+                        case .rdp: port = "3389"
+                        }
                     }
                 }
                 HStack {
