@@ -174,4 +174,9 @@ enum L10n {
     static var generateKeyPair: String { isZh ? "生成新密钥对" : "Generate new key pair" }
     static var exportAllJSON: String { isZh ? "导出全部为 JSON..." : "Export All as JSON..." }
     static var printTerminal: String { isZh ? "打印终端" : "Print Terminal" }
+    static var add: String { isZh ? "添加" : "Add" }
+    static var update: String { isZh ? "更新" : "Update" }
+    static var hostField: String { isZh ? "主机" : "host" }
+    static var portField: String { isZh ? "端口" : "port" }
+    static var presets: String { isZh ? "预设" : "Presets" }
 }

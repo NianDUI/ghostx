@@ -216,7 +216,7 @@ struct TunnelEditSheet: View {
             HStack {
                 Button("Cancel") { isPresented = false }
                 Spacer()
-                Button(editing != nil ? "Update" : "Add") {
+                Button(editing != nil ? L10n.update : L10n.add) {
                     var tunnel = editing ?? TunnelConfig()
                     tunnel.name = name
                     tunnel.type = type
