@@ -205,11 +205,27 @@ class CommandBus {
 
 ## Progress Tracking
 
-- **Last updated**: 2026-04-30 22:00
-- **Status**: Phase 0-5 ✅, Phase 6 60%, Phase 7-10 planned
-- **Build**: 0.62s, zero warnings, .app 3.5MB
-- **GitHub**: git@github.com:NianDUI/ghostx.git (8 commits)
-- **Total files**: 42 source files + 4 docs + C bridge headers
+- **Last updated**: 2026-05-01
+- **Status**: 20 commits, 48 source files, zero warnings, .app builds
+- **Build**: 0.07s incremental, 5.87s release, .app 3.5MB
+- **GitHub**: git@github.com:NianDUI/ghostx.git
+
+### Final Phase Status
+- Phase 0-5: COMPLETED ✅
+- Phase 6 (Dockable): ~85% — splits, collapse, layout persistence done
+- Phase 7 (Session Center): ~90% — search, tags, bulk edit, Xshell import done
+- Phase 8 (SFTP Dual-Pane): ~80% — dual-pane, transfer queue, upload, hex viewer done
+- Phase 9 (Terminal Pro): ~90% — horizontal scroll, column select, triple-click, 100K buffer, print done
+- Phase 10 (Protocols): ~50% — TELNET, RDP done; Kerberos/PKCS#11 deferred (low priority)
+
+### All Remaining Items (low priority)
+- [ ] Tab drag-to-reorder
+- [ ] Panel auto-hide with hover reveal  
+- [ ] Auth profiles (reusable credential configs)
+- [ ] Drag-drop file upload in SFTP
+- [ ] Customizable word separators for double-click
+- [ ] Kerberos/GSSAPI authentication
+- [ ] PKCS#11 smart card auth
 
 ### Phase Status
 - Phase 0: COMPLETED ✅
