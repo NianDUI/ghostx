@@ -217,62 +217,37 @@ final class NativeTerminalView: NSView {
     // MARK: - Keyboard Input
 
     override func keyDown(with event: NSEvent) {
-        // Handle special keys first
         let mods = event.modifierFlags
+
+        // Only intercept known special keys; pass everything else through
+        let seq: String?
         switch event.keyCode {
-        case 126: // Up arrow
-            onKeyPress?(mods.contains(.control) ? "\u{1b}[1;5A" : mods.contains(.option) ? "\u{1b}[1;3A" : "\u{1b}[A")
-            return
-        case 125: // Down arrow
-            onKeyPress?(mods.contains(.control) ? "\u{1b}[1;5B" : mods.contains(.option) ? "\u{1b}[1;3B" : "\u{1b}[B")
-            return
-        case 124: // Right arrow
-            onKeyPress?(mods.contains(.control) ? "\u{1b}[1;5C" : mods.contains(.option) ? "\u{1b}[1;3C" : "\u{1b}[C")
-            return
-        case 123: // Left arrow
-            onKeyPress?(mods.contains(.control) ? "\u{1b}[1;5D" : mods.contains(.option) ? "\u{1b}[1;3D" : "\u{1b}[D")
-            return
-        case 115: // Home
-            onKeyPress?("\u{1b}[H")
-            return
-        case 119: // End
-            onKeyPress?("\u{1b}[F")
-            return
-        case 116: // Page Up
-            onKeyPress?("\u{1b}[5~")
-            return
-        case 121: // Page Down
-            onKeyPress?("\u{1b}[6~")
-            return
-        case 117: // Delete (forward)
-            onKeyPress?("\u{1b}[3~")
-            return
-        case 51: // Backspace/Delete
-            onKeyPress?(mods.contains(.option) ? "\u{1b}\u{7f}" : "\u{7f}")
-            return
-        case 53: // Escape
-            onKeyPress?("\u{1b}")
-            return
-        case 36: // Return
-            onKeyPress?("\r")
-            return
-        case 48: // Tab
-            onKeyPress?(mods.contains(.shift) ? "\u{1b}[Z" : "\t")
-            return
-        default: break
+        case 126: seq = mods.contains(.control) ? "\u{1b}[1;5A" : mods.contains(.option) ? "\u{1b}[1;3A" : "\u{1b}[A"
+        case 125: seq = mods.contains(.control) ? "\u{1b}[1;5B" : mods.contains(.option) ? "\u{1b}[1;3B" : "\u{1b}[B"
+        case 124: seq = mods.contains(.control) ? "\u{1b}[1;5C" : mods.contains(.option) ? "\u{1b}[1;3C" : "\u{1b}[C"
+        case 123: seq = mods.contains(.control) ? "\u{1b}[1;5D" : mods.contains(.option) ? "\u{1b}[1;3D" : "\u{1b}[D"
+        case 115: seq = "\u{1b}[H"
+        case 119: seq = "\u{1b}[F"
+        case 116: seq = "\u{1b}[5~"
+        case 121: seq = "\u{1b}[6~"
+        case 117: seq = "\u{1b}[3~"
+        case 51:  seq = mods.contains(.option) ? "\u{1b}\u{7f}" : "\u{7f}"
+        case 53:  seq = "\u{1b}"
+        case 36:  seq = "\r"
+        case 48:  seq = mods.contains(.shift) ? "\u{1b}[Z" : "\t"
+        default:  seq = nil
         }
 
-        // Regular text input
-        if let chars = event.characters {
+        if let s = seq {
+            onKeyPress?(s)
+        } else if let chars = event.characters {
             onKeyPress?(chars)
         } else {
             interpretKeyEvents([event])
         }
     }
 
-    override func flagsChanged(with event: NSEvent) {
-        // Handle modifier-only events
-    }
+    override func flagsChanged(with event: NSEvent) {}
 
     // MARK: - Mouse & Context Menu
 
