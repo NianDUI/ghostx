@@ -11,6 +11,8 @@ struct ContentView: View {
     @State private var showTriggers = false
     @State private var showThemes = false
     @State private var showTunnels = false
+    @State private var showBulkEdit = false
+    @State private var bulkEditIDs: Set<UUID> = []
     @State private var sidebarCollapsed = false
     @State private var sidebarWidth: CGFloat = 260
     @State private var selectedGroupID: UUID?
@@ -95,6 +97,13 @@ struct ContentView: View {
                     Image(systemName: "point.3.connected.trianglepath.dotted")
                         .help("Port Forwarding & Tunnels")
                 }
+                Button(action: {
+                    bulkEditIDs = Set(sessionRepo.sessions.map(\.id))
+                    showBulkEdit = true
+                }) {
+                    Image(systemName: "checklist")
+                        .help("Bulk Edit Sessions")
+                }
             }
         }
         .onAppear {
@@ -116,6 +125,9 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showTriggers) {
             TriggerConfigView()
+        }
+        .sheet(isPresented: $showBulkEdit) {
+            BulkEditView(repo: sessionRepo, selectedIDs: bulkEditIDs)
         }
         .sheet(isPresented: $showThemes) {
             ThemePickerView()
@@ -200,12 +212,12 @@ struct SessionSidebar: View {
                 Menu("Import") {
                     Button("Import JSON...") { importSessions(format: "json") }
                     Button("Import CSV...") { importSessions(format: "csv") }
+                    Divider()
+                    Button("Import from Xshell...") { importFromXshell() }
                 }
-                .menuStyle(.borderlessButton)
                 Menu("Export") {
                     Button("Export All as JSON...") { exportAll(format: "json") }
                 }
-                .menuStyle(.borderlessButton)
             }
             .padding(8)
         }
@@ -224,6 +236,30 @@ struct SessionSidebar: View {
         panel.nameFieldStringValue = "ghostx_sessions.json"
         guard panel.runModal() == .OK, let url = panel.url else { return }
         try? repo.exportSessions(ids: repo.sessions.map(\.id), to: url)
+    }
+
+    private func importFromXshell() {
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.title = "Select Xshell Sessions Folder"
+        panel.message = "Choose the Xshell Sessions directory (e.g. .../Xshell/Sessions)"
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+
+        let sessions = XshellImporter.scanDirectory(url.path)
+        guard !sessions.isEmpty else {
+            let alert = NSAlert()
+            alert.messageText = "No sessions found"
+            alert.informativeText = "No .xsh files found in the selected directory."
+            alert.runModal()
+            return
+        }
+
+        let result = XshellImporter.importToRepository(sessions, repo: repo)
+        let alert = NSAlert()
+        alert.messageText = "Import Complete"
+        alert.informativeText = "Imported \(result.imported) sessions in \(result.groups) groups."
+        alert.runModal()
     }
 }
 
