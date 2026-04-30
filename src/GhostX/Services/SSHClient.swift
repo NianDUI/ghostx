@@ -6,7 +6,6 @@ final class SSHClient: ObservableObject {
     private var outputPipe: Pipe?
     private var inputPipe: Pipe?
     private var errorPipe: Pipe?
-    private var _nativeClient: Libssh2Client?
 
     let config: SessionConfig
     let credential: Credential?
@@ -56,9 +55,24 @@ final class SSHClient: ObservableObject {
 
     var isNative: Bool { nativeClient != nil }
     var nativeClient: Libssh2Client? { storedNativeClient }
+    var telnetClient: TelnetClient? { storedTelnet }
     private var storedNativeClient: Libssh2Client?
+    private var storedTelnet: TelnetClient?
 
     func connect(terminalType: String = "xterm-256color") async throws {
+        if config.protocolType == .telnet {
+            let telnet = TelnetClient(host: config.host, port: config.port)
+            telnet.onOutput = { [weak self] d in self?.onOutput?(d) }
+            telnet.onDisconnect = { [weak self] c in
+                self?.isConnected = false; self?.connectionState = .disconnected; self?.onDisconnect?(c)
+            }
+            connectionState = .connecting
+            telnet.connect()
+            storedTelnet = telnet
+            isConnected = telnet.isConnected
+            connectionState = telnet.isConnected ? .connected : .failed
+            return
+        }
         if let native = storedNativeClient {
             native.connect()
             isConnected = native.isConnected
@@ -156,18 +170,21 @@ final class SSHClient: ObservableObject {
     }
 
     func send(_ text: String) {
-        if let native = _nativeClient { native.send(text); return }
+        if let telnet = storedTelnet { telnet.send(text); return }
+        if let native = storedNativeClient { native.send(text); return }
         guard let data = text.data(using: .utf8) else { return }
         inputPipe?.fileHandleForWriting.write(data)
     }
 
     func send(_ data: Data) {
-        if let native = _nativeClient { native.send(data); return }
+        if let telnet = storedTelnet { telnet.send(data); return }
+        if let native = storedNativeClient { native.send(data); return }
         inputPipe?.fileHandleForWriting.write(data)
     }
 
     func resize(cols: Int, rows: Int) {
-        if let native = _nativeClient { native.resize(cols: cols, rows: rows); return }
+        if let telnet = storedTelnet { telnet.resize(cols: cols, rows: rows); return }
+        if let native = storedNativeClient { native.resize(cols: cols, rows: rows); return }
         guard let pid = process?.processIdentifier else { return }
         // Send SIGWINCH-equivalent via ioctl
         var winSize = winsize(
@@ -187,7 +204,8 @@ final class SSHClient: ObservableObject {
     }
 
     func disconnect() {
-        if let native = _nativeClient { native.disconnect(); return }
+        if let telnet = storedTelnet { telnet.disconnect(); return }
+        if let native = storedNativeClient { native.disconnect(); return }
         send("exit\n")
         DispatchQueue.global().asyncAfter(deadline: .now() + 2) { [weak self] in
             if self?.process?.isRunning == true { self?.process?.terminate() }

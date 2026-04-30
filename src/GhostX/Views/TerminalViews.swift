@@ -16,7 +16,11 @@ final class TabManager: ObservableObject {
 
     func openTab(for session: SessionConfig, useNative: Bool = true) {
         var client: SSHClient
-        if useNative {
+        if session.protocolType == .telnet {
+            // TELNET: use TelnetClient
+            client = SSHClient(config: session, credential: nil)
+            // Note: TELNET uses simple socket, bypasses libssh2
+        } else if useNative {
             let nativeClient = Libssh2Client(config: session)
             client = SSHClient(native: nativeClient)
         } else {

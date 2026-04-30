@@ -6,6 +6,7 @@ struct SessionConfig: Identifiable, Codable, Hashable {
     var name: String
     var host: String
     var port: UInt16 = 22
+    var protocolType: ProtocolType = .ssh
     var username: String
     var authMethod: AuthMethod = .key
     var privateKeyPath: String?
@@ -36,6 +37,11 @@ enum AuthMethod: String, Codable, CaseIterable {
     case password
     case key
     case agent
+}
+
+enum ProtocolType: String, Codable, CaseIterable {
+    case ssh = "SSH"
+    case telnet = "TELNET"
 }
 
 /// Session folder/group for tree organization

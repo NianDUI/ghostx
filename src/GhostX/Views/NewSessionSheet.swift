@@ -9,6 +9,7 @@ struct NewSessionSheet: View {
     @State private var name: String = ""
     @State private var host: String = ""
     @State private var port: String = "22"
+    @State private var protocolType: ProtocolType = .ssh
     @State private var username: String = NSUserName()
     @State private var authMethod: AuthMethod = .key
     @State private var privateKeyPath: String = "~/.ssh/id_ed25519"
@@ -29,9 +30,19 @@ struct NewSessionSheet: View {
                 TextField("Session Name:", text: $name, prompt: Text("Optional label"))
 
                 HStack {
+                    Picker("Protocol:", selection: $protocolType) {
+                        Text("SSH").tag(ProtocolType.ssh)
+                        Text("TELNET").tag(ProtocolType.telnet)
+                    }
+                    .pickerStyle(.segmented)
+                    .onChange(of: protocolType) { _, newProto in
+                        port = newProto == .ssh ? "22" : "23"
+                    }
+                }
+                HStack {
                     TextField("Host:", text: $host, prompt: Text("192.168.1.1"))
                     Text(":")
-                    TextField("22", text: $port)
+                    TextField(port, text: $port)
                         .frame(width: 60)
                 }
 
@@ -135,7 +146,8 @@ struct NewSessionSheet: View {
         var config = SessionConfig(
             name: name,
             host: host.trimmingCharacters(in: .whitespaces),
-            port: UInt16(port) ?? 22,
+            port: UInt16(port) ?? (protocolType == .ssh ? 22 : 23),
+            protocolType: protocolType,
             username: username.trimmingCharacters(in: .whitespaces),
             authMethod: authMethod,
             privateKeyPath: authMethod == .key ? privateKeyPath : nil,

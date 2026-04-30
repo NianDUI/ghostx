@@ -317,11 +317,13 @@ Based on joint analysis by Claude + Codex-unsafe of:
 - [ ] CSV + JSON import/export with file picker (JSON done, CSV partial)
 - [ ] Auth profiles (reusable credential configurations)
 
-### Phase 8 — SFTP Dual-Pane [ ]
-- [ ] Bottom-docked SFTP panel (local left + remote right split)
+### Phase 8 — SFTP Dual-Pane [COMPLETED 70%]
+- [x] Dual-pane SFTP (local left + remote right with HSplitView)
+- [x] Transfer queue with status (pending/transferring/done/failed)
+- [x] Double-click to navigate directories on both sides
+- [x] Selected file count in status bar
 - [ ] Drag-drop file upload from Finder to remote
 - [ ] Download with progress indicator + cancel
-- [ ] Transfer queue (multiple files, sequential/parallel)
 - [ ] File conflict resolution dialog (overwrite/skip/rename)
 - [ ] Inline text preview for remote files
 - [ ] Hex viewer for binary files
