@@ -102,6 +102,19 @@ final class Libssh2Client: ObservableObject {
         _keepaliveConfig = getSym(h, "libssh2_keepalive_config")
         _lastErrno    = getSym(h, "libssh2_session_last_errno")
         loadSftpSymbols(h)
+
+        // Verify required symbols loaded
+        let required: [String] = [
+            "libssh2_init", "libssh2_session_init", "libssh2_session_handshake",
+            "libssh2_userauth_password", "libssh2_userauth_publickey_fromfile",
+            "libssh2_channel_open_session", "libssh2_channel_shell",
+        ]
+        for name in required {
+            if dlsym(h, name) == nil {
+                lastError = "libssh2 missing symbol: \(name)"
+                return
+            }
+        }
     }
 
     private func getSym<T>(_ handle: UnsafeMutableRawPointer, _ name: String) -> T {
@@ -112,6 +125,9 @@ final class Libssh2Client: ObservableObject {
 
     func connect() {
         state = .connecting
+        guard dylib != nil, lastError == nil else {
+            fail(lastError ?? "libssh2 not loaded"); return
+        }
         guard _init(0) == 0 else { fail("libssh2_init failed"); return }
 
         sock = connectSocket()

@@ -22,7 +22,13 @@ final class TabManager: ObservableObject {
             // Note: TELNET uses simple socket, bypasses libssh2
         } else if useNative {
             let nativeClient = Libssh2Client(config: session)
-            client = SSHClient(native: nativeClient)
+            if nativeClient.lastError != nil {
+                // Fall back to Process-based SSH
+                let credential = CredentialStore.shared.load(host: session.host, username: session.username)
+                client = SSHClient(config: session, credential: credential)
+            } else {
+                client = SSHClient(native: nativeClient)
+            }
         } else {
             let credential = CredentialStore.shared.load(host: session.host, username: session.username)
             client = SSHClient(config: session, credential: credential)
