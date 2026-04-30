@@ -56,34 +56,34 @@ struct SettingsView: View {
                     Text("中文").tag("zh")
                     Text("English").tag("en")
                 }
-                Text("Restart app to apply language change")
+                Text(L10n.isZh ? "重启后生效" : "Restart to apply")
                     .font(.caption).foregroundColor(.secondary)
-                TextField("Terminal Type:", text: $terminalType)
-                TextField("Keep Alive (s):", value: $keepAlive, format: .number)
+                TextField(L10n.terminalType, text: $terminalType)
+                TextField(L10n.keepAlive, value: $keepAlive, format: .number)
             }
-            .tabItem { Text("General") }
+            .tabItem { Text(L10n.general) }
             .padding()
 
             Form {
                 Slider(value: $fontSize, in: 8...36, step: 1) {
-                    Text("Font Size: \(Int(fontSize))")
+                    Text("\(L10n.fontSize): \(Int(fontSize))")
                 }
-                TextField("Word separators:", text: $wordSeparators)
+                TextField(L10n.wordSeparators, text: $wordSeparators)
                     .onChange(of: wordSeparators) { _, v in
                         UserDefaults.standard.set(v, forKey: "GhostX.wordSeparators")
                     }
-                Text("Characters that delimit words for double-click selection")
+                Text(L10n.wordSepDesc)
                     .font(.caption).foregroundColor(.secondary)
             }
-            .tabItem { Text("Appearance") }
+            .tabItem { Text(L10n.appearance) }
             .padding()
 
             AuthProfileSettingsView()
-                .tabItem { Text("Auth Profiles") }
+                .tabItem { Text(L10n.authProfiles) }
                 .padding()
 
             KeyManagementView()
-                .tabItem { Text("SSH Keys") }
+                .tabItem { Text(L10n.sshKeys) }
                 .padding()
         }
         .frame(width: 500, height: 350)
@@ -98,14 +98,14 @@ struct AuthProfileSettingsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Authentication Profiles").font(.title3)
-            Text("Reusable credential configs applied to multiple sessions").font(.caption).foregroundColor(.secondary)
+            Text(L10n.authProfiles).font(.title3)
+            Text(L10n.authProfileDesc).font(.caption).foregroundColor(.secondary)
 
             List(manager.profiles) { profile in
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(profile.name).font(.body)
-                        Text("\(profile.username) — \(profile.authMethod == .key ? "Key" : "Password")")
+                        Text("\(profile.username) — \(profile.authMethod == .key ? L10n.key : L10n.password)")
                             .font(.caption).foregroundColor(.secondary)
                     }
                     Spacer()
@@ -144,9 +144,9 @@ struct AuthProfileEditor: View {
                 TextField("Name", text: $profile.name)
                 TextField("Username", text: $profile.username)
                 Picker("Auth Method", selection: $profile.authMethod) {
-                    Text("Key").tag(AuthMethod.key)
-                    Text("Password").tag(AuthMethod.password)
-                    Text("Agent").tag(AuthMethod.agent)
+                    Text(L10n.key).tag(AuthMethod.key)
+                    Text(L10n.password).tag(AuthMethod.password)
+                    Text(L10n.agent).tag(AuthMethod.agent)
                 }
                 if profile.authMethod == .key {
                     HStack {
@@ -192,7 +192,7 @@ struct KeyManagementView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("SSH Keys").font(.title3)
+            Text(L10n.sshKeys).font(.title3)
 
             List(keys) { key in
                 HStack {
@@ -276,7 +276,7 @@ struct KeyGenerateView: View {
 
     var body: some View {
         VStack(spacing: 12) {
-            Text("Generate SSH Key")
+            Text(L10n.generateSSHKey)
                 .font(.title2)
 
             Picker("Type:", selection: $keyType) {

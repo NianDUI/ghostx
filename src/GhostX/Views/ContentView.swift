@@ -209,7 +209,7 @@ struct SessionSidebar: View {
                 Image(systemName: "magnifyingglass")
                     .foregroundColor(.secondary)
                     .font(.caption)
-                TextField("Search sessions...", text: $searchText)
+                TextField(L10n.searchSessions, text: $searchText)
                     .font(.caption)
                     .textFieldStyle(.plain)
                 if !searchText.isEmpty {
@@ -228,14 +228,14 @@ struct SessionSidebar: View {
 
             // Session tree
             List {
-                Section("Sessions") {
+                Section(L10n.sessions) {
                     ForEach(filteredSessions) { session in
                         SessionRow(session: session, tabManager: tabManager, repo: repo)
                             .contextMenu {
-                                Button("Connect") { tabManager.openTab(for: session) }
-                                Button("Edit") { /* edit sheet */ }
+                                Button(L10n.connect) { tabManager.openTab(for: session) }
+                                Button(L10n.edit) { /* edit sheet */ }
                                 Divider()
-                                Button("Delete", role: .destructive) {
+                                Button(L10n.delete, role: .destructive) {
                                     try? repo.delete(id: session.id)
                                 }
                             }
@@ -248,13 +248,13 @@ struct SessionSidebar: View {
 
             // Bottom actions
             HStack {
-                Menu("Import") {
+                Menu(L10n.import) {
                     Button("Import JSON...") { importSessions(format: "json") }
                     Button("Import CSV...") { importSessions(format: "csv") }
                     Divider()
-                    Button("Import from Xshell...") { importFromXshell() }
+                    Button(L10n.importFromXshell) { importFromXshell() }
                 }
-                Menu("Export") {
+                Menu(L10n.export) {
                     Button("Export All as JSON...") { exportAll(format: "json") }
                 }
             }

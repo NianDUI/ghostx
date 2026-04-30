@@ -42,7 +42,7 @@ struct TunnelManagerView: View {
             HStack {
                 Button(action: { showAddSheet = true }) {
                     Image(systemName: "plus")
-                    Text("Add Tunnel")
+                    Text(L10n.addTunnel)
                 }
                 .buttonStyle(.borderedProminent)
 

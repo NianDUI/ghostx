@@ -315,16 +315,15 @@ struct ComposePanel: View {
     var body: some View {
         VStack(spacing: 8) {
             HStack {
-                Text("Batch Command")
+                Text(L10n.batchCommand)
                     .font(.headline)
                 Spacer()
-                Text("\(selectedTabIDs.count) / \(tabManager.tabs.count) selected")
+                Text("\(selectedTabIDs.count) / \(tabManager.tabs.count) \(L10n.selectedCount)")
                     .font(.caption)
                     .foregroundColor(.secondary)
 
-                // Quick command picker
-                Picker("Quick:", selection: $selectedQuickCmd) {
-                    Text("Quick Commands").tag(nil as UUID?)
+                Picker(L10n.quickCommands, selection: $selectedQuickCmd) {
+                    Text(L10n.quickCommands).tag(nil as UUID?)
                     ForEach(quickCommands) { cmd in
                         Text(cmd.name).tag(cmd.id as UUID?)
                     }
@@ -337,12 +336,12 @@ struct ComposePanel: View {
                     }
                 }
 
-                Button("Send to Selected") {
+                Button(L10n.sendToSelected) {
                     tabManager.broadcast(command: commandText, to: selectedTabIDs)
                 }
                 .disabled(commandText.isEmpty || selectedTabIDs.isEmpty)
                 .buttonStyle(.borderedProminent)
-                Button("Send to All") {
+                Button(L10n.sendToAll) {
                     tabManager.broadcastToAll(commandText)
                 }
                 .disabled(commandText.isEmpty)
@@ -358,11 +357,11 @@ struct ComposePanel: View {
 
             // Save quick command row
             HStack {
-                TextField("Cmd name", text: $cmdName, prompt: Text("Save quick cmd as..."))
+                TextField(L10n.cmdName, text: $cmdName, prompt: Text(L10n.saveQuickCommand))
                     .font(.caption)
                     .textFieldStyle(.roundedBorder)
                     .frame(width: 160)
-                Button("Save") {
+                Button(L10n.save) {
                     guard !cmdName.isEmpty && !commandText.isEmpty else { return }
                     let cmd = QuickCommand(name: cmdName, command: commandText)
                     try? repo.saveQuickCommand(cmd)

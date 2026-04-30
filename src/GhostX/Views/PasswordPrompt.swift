@@ -5,18 +5,18 @@ enum PasswordPrompt {
     @MainActor
     static func ask(host: String, username: String, saveToKeychain: Bool = false) -> String? {
         let alert = NSAlert()
-        alert.messageText = "SSH Authentication"
-        alert.informativeText = "Enter password for \(username)@\(host)"
+        alert.messageText = L10n.sshAuth
+        alert.informativeText = "\(L10n.enterPassword) \(username)@\(host)"
         alert.alertStyle = .informational
-        alert.addButton(withTitle: "Connect")
-        alert.addButton(withTitle: "Cancel")
+        alert.addButton(withTitle: L10n.connect)
+        alert.addButton(withTitle: L10n.cancel)
 
         let textField = NSSecureTextField(frame: NSRect(x: 0, y: 0, width: 280, height: 24))
         textField.placeholderString = "Password"
         alert.accessoryView = textField
 
         // Add "Save to Keychain" checkbox
-        let saveCheckbox = NSButton(checkboxWithTitle: "Save to Keychain", target: nil, action: nil)
+        let saveCheckbox = NSButton(checkboxWithTitle: L10n.saveToKeychain, target: nil, action: nil)
         saveCheckbox.state = saveToKeychain ? .on : .off
         saveCheckbox.frame = NSRect(x: 0, y: 28, width: 280, height: 20)
         let container = NSView(frame: NSRect(x: 0, y: 0, width: 280, height: 52))

@@ -7,7 +7,7 @@ enum L10n {
         get { UserDefaults.standard.string(forKey: "GhostX.language") }
         set { UserDefaults.standard.set(newValue, forKey: "GhostX.language") }
     }
-    private static var isZh: Bool {
+    static var isZh: Bool {
         if let pref = preferredLanguage { return pref == "zh" }
         return Locale.current.language.languageCode?.identifier == "zh"
     }
@@ -22,6 +22,8 @@ enum L10n {
 
     // MARK: - Session
     static var sessions: String { isZh ? "会话" : "Sessions" }
+    static var searchSessions: String { isZh ? "搜索会话..." : "Search sessions..." }
+    static var importFromXshell: String { isZh ? "从 Xshell 导入..." : "Import from Xshell..." }
     static var sessionName: String { isZh ? "会话名称" : "Session Name" }
     static var host: String { isZh ? "主机" : "Host" }
     static var port: String { isZh ? "端口" : "Port" }
@@ -92,10 +94,14 @@ enum L10n {
     static var general: String { isZh ? "通用" : "General" }
     static var appearance: String { isZh ? "外观" : "Appearance" }
     static var sshKeys: String { isZh ? "SSH 密钥" : "SSH Keys" }
+    static var authProfiles: String { isZh ? "认证配置文件" : "Auth Profiles" }
+    static var wordSeparators: String { isZh ? "分词符" : "Word separators" }
     static var proxySettings: String { isZh ? "代理设置" : "Proxy Settings" }
     static var enableProxy: String { isZh ? "启用代理" : "Enable Proxy" }
     static var proxyType: String { isZh ? "代理类型" : "Proxy Type" }
     static var proxyHost: String { isZh ? "代理主机" : "Proxy Host" }
+    static var protocolLabel: String { isZh ? "协议" : "Protocol" }
+    static var authProfile: String { isZh ? "认证配置" : "Auth Profile" }
 
     // MARK: - Actions
     static var save: String { isZh ? "保存" : "Save" }
@@ -117,4 +123,7 @@ enum L10n {
     static var saveToKeychain: String { isZh ? "保存到钥匙串" : "Save to Keychain" }
     static var passwordRequired: String { isZh ? "需要密码" : "Password required" }
     static var noCredentials: String { isZh ? "无可用凭据" : "No credentials" }
+    static var authProfileDesc: String { isZh ? "可复用的认证配置，应用于多个会话" : "Reusable credential configs applied to multiple sessions" }
+    static var generateSSHKey: String { isZh ? "生成 SSH 密钥" : "Generate SSH Key" }
+    static var wordSepDesc: String { isZh ? "双击选词时的分隔字符" : "Characters that delimit words for double-click selection" }
 }

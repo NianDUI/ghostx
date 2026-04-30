@@ -32,7 +32,7 @@ struct NewSessionSheet: View {
                 TextField("Session Name:", text: $name, prompt: Text("Optional label"))
 
                 HStack {
-                    Picker("Protocol:", selection: $protocolType) {
+                    Picker(L10n.protocolLabel, selection: $protocolType) {
                         Text("SSH").tag(ProtocolType.ssh)
                         Text("TELNET").tag(ProtocolType.telnet)
                         Text("RDP").tag(ProtocolType.rdp)
@@ -47,16 +47,16 @@ struct NewSessionSheet: View {
                     }
                 }
                 HStack {
-                    TextField("Host:", text: $host, prompt: Text("192.168.1.1"))
+                    TextField(L10n.host, text: $host, prompt: Text("192.168.1.1"))
                     Text(":")
                     TextField(port, text: $port)
                         .frame(width: 60)
                 }
 
-                TextField("Username:", text: $username)
+                TextField(L10n.username, text: $username)
 
                 if !authManager.profiles.isEmpty {
-                    Picker("Auth Profile:", selection: $selectedAuthProfile) {
+                    Picker(L10n.authProfile, selection: $selectedAuthProfile) {
                         Text("None").tag(nil as UUID?)
                         ForEach(authManager.profiles) { p in
                             Text(p.name).tag(p.id as UUID?)
@@ -71,16 +71,16 @@ struct NewSessionSheet: View {
                     }
                 }
 
-                Picker("Auth:", selection: $authMethod) {
-                    Text("Key").tag(AuthMethod.key)
-                    Text("Password").tag(AuthMethod.password)
-                    Text("Agent").tag(AuthMethod.agent)
+                Picker(L10n.authMethod, selection: $authMethod) {
+                    Text(L10n.key).tag(AuthMethod.key)
+                    Text(L10n.password).tag(AuthMethod.password)
+                    Text(L10n.agent).tag(AuthMethod.agent)
                 }
                 .pickerStyle(.segmented)
 
                 if authMethod == .key {
                     HStack {
-                        TextField("Private Key:", text: $privateKeyPath)
+                        TextField(L10n.privateKey, text: $privateKeyPath)
                         Button(action: browseKey) {
                             Image(systemName: "folder")
                         }
