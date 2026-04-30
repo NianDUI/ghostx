@@ -17,6 +17,10 @@ final class NativeTerminalView: NSView {
     private var palette: [CGColor] { theme.paletteCG }
     private var cursorBlinkTimer: Timer?
     private var themeObserver: NSObjectProtocol?
+    private var horizontalScrollOffset: CGFloat = 0
+    private var maxLineWidth: CGFloat = 0
+    private var isSelectingColumn = false
+    private var columnSelectStart = NSPoint.zero
 
     var onKeyPress: ((String) -> Void)?
     var onResize: ((Int, Int) -> Void)?  // cols, rows
@@ -102,12 +106,17 @@ final class NativeTerminalView: NSView {
     override func draw(_ dirtyRect: NSRect) {
         guard let ctx = NSGraphicsContext.current?.cgContext else { return }
 
-        // Background
         ctx.setFillColor(defaultBg)
         ctx.fill(dirtyRect)
 
         let snapshot = buffer.snapshot()
+        let hOffset = horizontalScrollOffset
         let startRow = max(0, Int(dirtyRect.origin.y / cellHeight) - 1)
+
+        // Track max line width for horizontal scrollbar
+        var maxW: CGFloat = 0
+        for row in snapshot.grid { maxW = max(maxW, CGFloat(row.count) * cellWidth) }
+        maxLineWidth = maxW
 
         for y in startRow..<snapshot.rows {
             let screenY = frame.height - CGFloat(y + 1) * cellHeight - 4
@@ -115,9 +124,8 @@ final class NativeTerminalView: NSView {
 
             for x in 0..<snapshot.cols {
                 let cell = snapshot.grid[y][x]
-                let screenX = CGFloat(x) * cellWidth + 4
+                let screenX = CGFloat(x) * cellWidth + 4 - hOffset
 
-                // Skip cells outside dirty rect
                 if screenX + cellWidth < dirtyRect.minX || screenX > dirtyRect.maxX { continue }
 
                 // Draw background if not default
@@ -141,10 +149,21 @@ final class NativeTerminalView: NSView {
 
         // Draw cursor
         if snapshot.cursorVisible {
-            let cx = CGFloat(snapshot.cursorX) * cellWidth + 4
+            let cx = CGFloat(snapshot.cursorX) * cellWidth + 4 - hOffset
             let cy = frame.height - CGFloat(snapshot.cursorY + 1) * cellHeight - 4
             ctx.setFillColor(cursorColor)
             ctx.fill(CGRect(x: cx, y: cy, width: 2, height: cellHeight))
+        }
+
+        // Horizontal scrollbar
+        let viewW = frame.width - 8
+        if maxW > viewW && hOffset >= 0 {
+            let barH: CGFloat = 6; let barY: CGFloat = 2
+            let thumbW = max(20, viewW * (viewW / maxW))
+            let maxOff = max(1, maxW - viewW)
+            let thumbX = (viewW - thumbW) * (hOffset / maxOff)
+            ctx.setFillColor(CGColor(gray: 0.5, alpha: 0.5))
+            ctx.fill(CGRect(x: 4 + thumbX, y: barY, width: thumbW, height: barH))
         }
     }
 
@@ -291,10 +310,17 @@ final class NativeTerminalView: NSView {
     }
 
     override func scrollWheel(with event: NSEvent) {
-        let delta = event.scrollingDeltaY
-        if delta != 0 {
-            buffer.scroll(delta: delta > 0 ? -3 : 3)
+        if event.modifierFlags.contains(.shift) {
+            // Horizontal scroll with Shift
+            let dx = event.scrollingDeltaX != 0 ? event.scrollingDeltaX : event.scrollingDeltaY
+            horizontalScrollOffset = max(0, horizontalScrollOffset - dx)
             needsDisplay = true
+        } else {
+            let delta = event.scrollingDeltaY
+            if delta != 0 {
+                buffer.scroll(delta: delta > 0 ? -3 : 3)
+                needsDisplay = true
+            }
         }
     }
 
