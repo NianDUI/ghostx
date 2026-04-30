@@ -135,8 +135,8 @@ struct TerminalArea: View {
                         }
                     }
                 }
-                .frame(height: 30)
-                .background(Color(NSColor.windowBackgroundColor).opacity(0.5))
+                .frame(height: 26)
+                .background(VisualEffectView(material: .titlebar, blendingMode: .withinWindow).ignoresSafeArea())
 
                 // Active terminal
                 if let activeTab = tabManager.tabs.first(where: { $0.id == tabManager.activeTabID }) {
@@ -156,7 +156,7 @@ private func colorForState(_ state: SSHClient.ConnectionState) -> Color {
     }
 }
 
-/// Single tab button
+/// Ghostty-style compact tab button
 struct TabButton: View {
     let tab: TabManager.TerminalTab
     let isActive: Bool
@@ -167,20 +167,24 @@ struct TabButton: View {
         HStack(spacing: 4) {
             Circle()
                 .fill(colorForState(tab.client.connectionState))
-                .frame(width: 6, height: 6)
+                .frame(width: 5, height: 5)
             Text(tab.title)
-                .font(.caption)
+                .font(.system(size: 11, weight: isActive ? .medium : .regular))
                 .lineLimit(1)
-                .padding(.horizontal, 4)
             Button(action: onClose) {
                 Image(systemName: "xmark")
-                    .font(.system(size: 8, weight: .bold))
+                    .font(.system(size: 7, weight: .medium))
             }
             .buttonStyle(.plain)
+            .opacity(0.5)
         }
         .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(isActive ? Color(NSColor.controlAccentColor).opacity(0.2) : Color.clear)
+        .padding(.vertical, 3)
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(isActive ? Color.accentColor : Color.clear)
+                .frame(height: 2)
+        }
         .contentShape(Rectangle())
         .onTapGesture { onSelect() }
     }

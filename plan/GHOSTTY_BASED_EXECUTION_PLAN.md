@@ -1,5 +1,15 @@
 # GhostX 基于 Ghostty 的执行计划
 
+## Progress
+
+- [ ] Phase 0: 基线冻结与对齐
+- [ ] Phase 1: 引入 Ghostty 终端基座
+- [ ] Phase 2: 替换当前终端渲染主路径
+- [ ] Phase 3: Ghostty 风格 UI 重构
+- [ ] Phase 4: 输入、选择、滚动与高级终端行为补齐
+- [ ] Phase 5: 业务模块适配和回归
+- [ ] Phase 6: 清理旧实现
+
 ## 目标
 
 以 `/Users/lyd/WorkSpace/Ai/ghostty` 提供的 `libghostty-vt` 能力为终端内核，保留 `ghostx` 现有的 SSH、SFTP、会话管理和多窗口业务层，逐步替换当前自绘终端实现，使产品在技术栈和页面观感上同时向 Ghostty 对齐。

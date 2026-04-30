@@ -1,4 +1,23 @@
 import SwiftUI
+import AppKit
+
+/// Ghostty-style NSVisualEffectView wrapper
+struct VisualEffectView: NSViewRepresentable {
+    let material: NSVisualEffectView.Material
+    var blendingMode: NSVisualEffectView.BlendingMode = .behindWindow
+
+    func makeNSView(context: Context) -> NSVisualEffectView {
+        let v = NSVisualEffectView()
+        v.material = material
+        v.blendingMode = blendingMode
+        v.state = .followsWindowActiveState
+        return v
+    }
+    func updateNSView(_ v: NSVisualEffectView, context: Context) {
+        v.material = material
+        v.blendingMode = blendingMode
+    }
+}
 
 /// Main window content with session sidebar, terminal area, and optional bottom panel
 struct ContentView: View {
@@ -33,8 +52,7 @@ struct ContentView: View {
                             )
                         }
                         .frame(width: sidebarWidth)
-                        .background(Color(NSColor.windowBackgroundColor))
-                        Divider()
+                        .background(VisualEffectView(material: .sidebar, blendingMode: .behindWindow).ignoresSafeArea())
                     }
                     .transition(.move(edge: .leading))
                     .onHover { hovering in
@@ -76,8 +94,33 @@ struct ContentView: View {
 
             // Right: Terminal area with splits + optional bottom panel
             VSplitView {
-                // Terminal with split support
-                if tabManager.tabs.isEmpty {
+                // Tab bar + terminal with split support
+                VStack(spacing: 0) {
+                    // Ghostty-style compact tab bar
+                    if !tabManager.tabs.isEmpty {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 0) {
+                                ForEach(tabManager.tabs) { tab in
+                                    TabButton(
+                                        tab: tab,
+                                        isActive: tabManager.activeTabID == tab.id,
+                                        onSelect: { tabManager.activeTabID = tab.id
+                                            if let nid = splitManager.nodeID(for: tab.id) {
+                                                splitManager.focusLeaf(id: nid)
+                                            }
+                                        },
+                                        onClose: { tabManager.closeTab(id: tab.id) }
+                                    )
+                                }
+                            }
+                        }
+                        .frame(height: 26)
+                        .background(VisualEffectView(material: .titlebar, blendingMode: .withinWindow).ignoresSafeArea())
+                        Divider().opacity(0.3)
+                    }
+
+                    // Terminal with split support
+                    if tabManager.tabs.isEmpty {
                     VStack {
                         Image(systemName: "terminal")
                             .font(.system(size: 48))
@@ -93,6 +136,7 @@ struct ContentView: View {
                 } else {
                     SplitTreeView(splitManager: splitManager, tabManager: tabManager, node: splitManager.root)
                 }
+                } // close tab-bar VStack
 
                 // Bottom: Compose panel (togglable)
                 if showComposePanel {

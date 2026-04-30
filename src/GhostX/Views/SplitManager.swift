@@ -139,6 +139,12 @@ struct SplitTreeView: View {
         } else if let tabID = node.tabID,
                   let tab = tabManager.tabs.first(where: { $0.id == tabID }) {
             TerminalView(client: tab.client, config: tab.config)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 0)
+                        .stroke(splitManager.focusedNodeID == node.id
+                            ? Color.accentColor.opacity(0.6) : Color.clear,
+                            lineWidth: splitManager.focusedNodeID == node.id ? 2 : 0)
+                )
                 .overlay(alignment: .topTrailing) {
                     HStack(spacing: 2) {
                         Button(action: { splitManager.splitCurrent(direction: .horizontal, newTabID: tabID) }) {
