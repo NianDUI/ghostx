@@ -104,6 +104,16 @@ struct ContentView: View {
                     Image(systemName: "checklist")
                         .help("Bulk Edit Sessions")
                 }
+                Button(action: {
+                    // Print active terminal to PDF
+                    if let window = NSApp.keyWindow {
+                        let printOp = NSPrintOperation(view: window.contentView!)
+                        printOp.run()
+                    }
+                }) {
+                    Image(systemName: "printer")
+                        .help("Print Terminal")
+                }
             }
         }
         .onAppear {

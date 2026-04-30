@@ -187,6 +187,7 @@ struct TerminalView: View {
     @StateObject private var terminalState = TerminalState()
     @State private var logger: SessionLogger?
     @State private var triggerEngine: TriggerEngine?
+    @State private var scriptRecorder: ScriptRecorder?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -196,6 +197,7 @@ struct TerminalView: View {
                     onKeyPress: { key in
                         terminalState.buffer.resetScroll()
                         logger?.logInput(key)
+                        scriptRecorder?.recordInput(key)
                         client.send(key)
                     },
                     onResize: { cols, rows in
@@ -212,6 +214,10 @@ struct TerminalView: View {
                 let sessionLogger = SessionLogger(sessionID: config.id, host: config.host)
                 sessionLogger.start()
                 self.logger = sessionLogger
+
+                let recorder = ScriptRecorder()
+                _ = recorder.start()
+                self.scriptRecorder = recorder
 
                 // Setup trigger engine
                 let engine = TriggerEngine()
