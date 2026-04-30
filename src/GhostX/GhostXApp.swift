@@ -46,6 +46,7 @@ struct SettingsView: View {
     @AppStorage("defaultTerminalType") private var terminalType = "xterm-256color"
     @AppStorage("defaultKeepAlive") private var keepAlive = 60
     @AppStorage("fontSize") private var fontSize = 13.0
+    @AppStorage("GhostX.wordSeparators") private var wordSeparators = " \t\n\"'`@$><=;|&{}()[]#,"
 
     var body: some View {
         TabView {
@@ -60,6 +61,12 @@ struct SettingsView: View {
                 Slider(value: $fontSize, in: 8...36, step: 1) {
                     Text("Font Size: \(Int(fontSize))")
                 }
+                TextField("Word separators:", text: $wordSeparators)
+                    .onChange(of: wordSeparators) { _, v in
+                        UserDefaults.standard.set(v, forKey: "GhostX.wordSeparators")
+                    }
+                Text("Characters that delimit words for double-click selection")
+                    .font(.caption).foregroundColor(.secondary)
             }
             .tabItem { Text("Appearance") }
             .padding()
