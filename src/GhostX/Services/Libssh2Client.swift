@@ -259,19 +259,19 @@ final class Libssh2Client: ObservableObject {
     private var _sftpStat: (@convention(c) (UnsafeMutableRawPointer?, UnsafePointer<CChar>?, UnsafeMutableRawPointer?) -> Int32)? = nil
 
     private func loadSftpSymbols(_ h: UnsafeMutableRawPointer) {
-        _sftpInit    = unsafeBitCast(dlsym(h, "libssh2_sftp_init"), to: type(of: _sftpInit!))
-        _sftpShutdown = unsafeBitCast(dlsym(h, "libssh2_sftp_shutdown"), to: type(of: _sftpShutdown!))
-        _sftpOpen    = unsafeBitCast(dlsym(h, "libssh2_sftp_open"), to: type(of: _sftpOpen!))
-        _sftpRead    = unsafeBitCast(dlsym(h, "libssh2_sftp_read"), to: type(of: _sftpRead!))
-        _sftpWrite   = unsafeBitCast(dlsym(h, "libssh2_sftp_write"), to: type(of: _sftpWrite!))
-        _sftpClose   = unsafeBitCast(dlsym(h, "libssh2_sftp_close"), to: type(of: _sftpClose!))
-        _sftpOpendir = unsafeBitCast(dlsym(h, "libssh2_sftp_open_ex"), to: type(of: _sftpOpendir!))
-        _sftpReaddir = unsafeBitCast(dlsym(h, "libssh2_sftp_readdir"), to: type(of: _sftpReaddir!))
-        _sftpClosedir = unsafeBitCast(dlsym(h, "libssh2_sftp_close"), to: type(of: _sftpClosedir!))
-        _sftpUnlink  = unsafeBitCast(dlsym(h, "libssh2_sftp_unlink"), to: type(of: _sftpUnlink!))
-        _sftpRename  = unsafeBitCast(dlsym(h, "libssh2_sftp_rename"), to: type(of: _sftpRename!))
-        _sftpMkdir   = unsafeBitCast(dlsym(h, "libssh2_sftp_mkdir"), to: type(of: _sftpMkdir!))
-        _sftpStat    = unsafeBitCast(dlsym(h, "libssh2_sftp_stat"), to: type(of: _sftpStat!))
+        _sftpInit    = unsafeBitCast(dlsym(h, "libssh2_sftp_init"), to: (@convention(c) (UnsafeMutableRawPointer?) -> UnsafeMutableRawPointer?).self)
+        _sftpShutdown = unsafeBitCast(dlsym(h, "libssh2_sftp_shutdown"), to: (@convention(c) (UnsafeMutableRawPointer?) -> Int32).self)
+        _sftpOpen    = unsafeBitCast(dlsym(h, "libssh2_sftp_open"), to: (@convention(c) (UnsafeMutableRawPointer?, UnsafePointer<CChar>?, UInt64, Int64, Int32) -> UnsafeMutableRawPointer?).self)
+        _sftpRead    = unsafeBitCast(dlsym(h, "libssh2_sftp_read"), to: (@convention(c) (UnsafeMutableRawPointer?, UnsafeMutablePointer<CChar>?, Int) -> Int).self)
+        _sftpWrite   = unsafeBitCast(dlsym(h, "libssh2_sftp_write"), to: (@convention(c) (UnsafeMutableRawPointer?, UnsafePointer<CChar>?, Int) -> Int).self)
+        _sftpClose   = unsafeBitCast(dlsym(h, "libssh2_sftp_close"), to: (@convention(c) (UnsafeMutableRawPointer?) -> Int32).self)
+        _sftpOpendir = unsafeBitCast(dlsym(h, "libssh2_sftp_open_ex"), to: (@convention(c) (UnsafeMutableRawPointer?, UnsafePointer<CChar>?) -> UnsafeMutableRawPointer?).self)
+        _sftpReaddir = unsafeBitCast(dlsym(h, "libssh2_sftp_readdir"), to: (@convention(c) (UnsafeMutableRawPointer?, UnsafeMutablePointer<CChar>?, Int, UnsafeMutableRawPointer?) -> Int32).self)
+        _sftpClosedir = unsafeBitCast(dlsym(h, "libssh2_sftp_close"), to: (@convention(c) (UnsafeMutableRawPointer?) -> Int32).self)
+        _sftpUnlink  = unsafeBitCast(dlsym(h, "libssh2_sftp_unlink"), to: (@convention(c) (UnsafeMutableRawPointer?, UnsafePointer<CChar>?) -> Int32).self)
+        _sftpRename  = unsafeBitCast(dlsym(h, "libssh2_sftp_rename"), to: (@convention(c) (UnsafeMutableRawPointer?, UnsafePointer<CChar>?, UnsafePointer<CChar>?) -> Int32).self)
+        _sftpMkdir   = unsafeBitCast(dlsym(h, "libssh2_sftp_mkdir"), to: (@convention(c) (UnsafeMutableRawPointer?, UnsafePointer<CChar>?, Int64) -> Int32).self)
+        _sftpStat    = unsafeBitCast(dlsym(h, "libssh2_sftp_stat"), to: (@convention(c) (UnsafeMutableRawPointer?, UnsafePointer<CChar>?, UnsafeMutableRawPointer?) -> Int32).self)
     }
 
     /// List files in remote directory
