@@ -245,8 +245,10 @@ final class TerminalBuffer {
 
     private func putChar(_ ch: Character) {
         // Clamp cursor to valid range
-        cursorX = max(0, min(cursorX, cols - 1))
-        cursorY = max(0, min(cursorY, rows - 1))
+        cursorX = max(0, min(cursorX, max(0, cols - 1)))
+        cursorY = max(0, min(cursorY, max(0, rows - 1)))
+        guard rows > 0 && cols > 0 else { return }
+        guard cursorY < grid.count, cursorX < grid[cursorY].count else { return }
 
         guard ch != "\u{7}" else { return }
         if ch == "\n" { cursorX = 0; cursorDown(); return }
@@ -393,9 +395,13 @@ final class TerminalBuffer {
             visibleGrid = grid
         }
 
+        // Ensure grid dimensions match reported rows
+        while visibleGrid.count < rows {
+            visibleGrid.append(Array(repeating: .empty, count: cols))
+        }
         return TerminalSnapshot(
             cols: cols, rows: rows,
-            grid: visibleGrid,
+            grid: Array(visibleGrid.prefix(rows)),
             cursorX: cursorX, cursorY: scrollRows > 0 ? -1 : cursorY,
             cursorVisible: scrollRows == 0 && cursorVisible,
             scrollbackCount: scrollback.count,

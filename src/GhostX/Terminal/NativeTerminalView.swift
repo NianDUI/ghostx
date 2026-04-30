@@ -118,12 +118,15 @@ final class NativeTerminalView: NSView {
         for row in snapshot.grid { maxW = max(maxW, CGFloat(row.count) * cellWidth) }
         maxLineWidth = maxW
 
-        for y in startRow..<snapshot.rows {
+        let gridRows = snapshot.grid.count
+        for y in startRow..<min(snapshot.rows, gridRows) {
             let screenY = frame.height - CGFloat(y + 1) * cellHeight - 4
             if screenY > dirtyRect.maxY || screenY + cellHeight < dirtyRect.minY { continue }
 
-            for x in 0..<snapshot.cols {
-                let cell = snapshot.grid[y][x]
+            let row = snapshot.grid[y]
+            let rowCols = row.count
+            for x in 0..<min(snapshot.cols, rowCols) {
+                let cell = row[x]
                 let screenX = CGFloat(x) * cellWidth + 4 - hOffset
 
                 if screenX + cellWidth < dirtyRect.minX || screenX > dirtyRect.maxX { continue }
