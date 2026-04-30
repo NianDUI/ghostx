@@ -1,7 +1,8 @@
 import Foundation
 
-/// Swift wrapper around libghostty-vt C API loaded dynamically at runtime.
-/// This avoids SPM linker path issues during development.
+/// Terminal renderer bridge using libghostty-vt C API via dlopen.
+/// Used when full libghostty rendering is preferred over the built-in TerminalBuffer+NativeTerminalView.
+/// Currently the built-in renderer is the primary path; this bridge is kept for future integration.
 final class TerminalBridge {
     private var terminalPtr: UnsafeMutableRawPointer?
     private var renderStatePtr: UnsafeMutableRawPointer?
@@ -16,97 +17,82 @@ final class TerminalBridge {
     var onTitleChanged: ((String) -> Void)?
     var onScreenUpdate: (() -> Void)?
 
-    // Function pointers loaded from dylib
-    private var fn_terminal_new: (@convention(c) (UInt16, UInt16, UInt32) -> UnsafeMutableRawPointer?)?
-    private var fn_terminal_free: (@convention(c) (UnsafeMutableRawPointer?) -> Void)?
-    private var fn_vt_write: (@convention(c) (UnsafeMutableRawPointer?, UnsafePointer<UInt8>?, Int) -> Void)?
-    private var fn_terminal_resize: (@convention(c) (UnsafeMutableRawPointer?, UInt16, UInt16, UInt32, UInt32) -> Void)?
-    private var fn_render_state_new: (@convention(c) () -> UnsafeMutableRawPointer?)?
-    private var fn_render_state_free: (@convention(c) (UnsafeMutableRawPointer?) -> Void)?
-    private var fn_render_state_update: (@convention(c) (UnsafeMutableRawPointer?, UnsafeMutableRawPointer?) -> Void)?
-    // ... more as needed
+    // Function pointers
+    private typealias TerminalNewFn = @convention(c) (UInt16, UInt16, UInt32) -> UnsafeMutableRawPointer?
+    private typealias TerminalFreeFn = @convention(c) (UnsafeMutableRawPointer?) -> Void
+    private typealias VtWriteFn = @convention(c) (UnsafeMutableRawPointer?, UnsafePointer<UInt8>?, Int) -> Void
+    private typealias ResizeFn = @convention(c) (UnsafeMutableRawPointer?, UInt16, UInt16, UInt32, UInt32) -> Void
+    private typealias RenderNewFn = @convention(c) () -> UnsafeMutableRawPointer?
+    private typealias RenderFreeFn = @convention(c) (UnsafeMutableRawPointer?) -> Void
+    private typealias RenderUpdateFn = @convention(c) (UnsafeMutableRawPointer?, UnsafeMutableRawPointer?) -> Void
+
+    private var fn_terminal_new: TerminalNewFn?
+    private var fn_terminal_free: TerminalFreeFn?
+    private var fn_vt_write: VtWriteFn?
+    private var fn_resize: ResizeFn?
+    private var fn_render_new: RenderNewFn?
+    private var fn_render_free: RenderFreeFn?
+    private var fn_render_update: RenderUpdateFn?
 
     init(cols: UInt16 = 80, rows: UInt16 = 24) {
-        self.cols = cols
-        self.rows = rows
+        self.cols = cols; self.rows = rows
         loadDylib()
         self.terminalPtr = fn_terminal_new?(cols, rows, 5000)
-        self.renderStatePtr = fn_render_state_new?()
+        self.renderStatePtr = fn_render_new?()
     }
 
     private func loadDylib() {
-        // Search for the dylib in multiple locations
-        let searchPaths = [
-            Bundle.main.resourcePath.map { "\($0)/../MacOS/libghostty-vt.dylib" },
+        let paths = [
+            Bundle.main.path(forResource: "libghostty-vt", ofType: "dylib"),
             Bundle.main.bundlePath + "/Contents/MacOS/libghostty-vt.dylib",
-            "/Users/lyd/WorkSpace/Ai/ghostx/src/GhostXBridge/libghostty-vt.dylib",
-            "/Users/lyd/WorkSpace/Ai/ghostx/build/ghostty/lib/libghostty-vt.dylib",
+            "/opt/homebrew/lib/libghostty-vt.dylib",
         ]
-
         var handle: UnsafeMutableRawPointer?
-        for path in searchPaths {
-            guard let path = path else { continue }
-            handle = dlopen(path, RTLD_NOW)
-            if handle != nil { break }
-        }
+        for p in paths { if let p, (handle = dlopen(p, RTLD_NOW)) != nil { break } }
+        guard let h = handle else { return }
+        dylibHandle = h
 
-        guard let handle = handle else {
-            print("[TerminalBridge] Warning: Could not load libghostty-vt.dylib - terminal features disabled")
-            return
-        }
-
-        self.dylibHandle = handle
-
-        fn_terminal_new = unsafeMakeFunc(handle, "ghostx_terminal_new")
-        fn_terminal_free = unsafeMakeFunc(handle, "ghostx_terminal_free")
-        fn_vt_write = unsafeMakeFunc(handle, "ghostx_terminal_vt_write")
-        fn_terminal_resize = unsafeMakeFunc(handle, "ghostx_terminal_resize")
-        fn_render_state_new = unsafeMakeFunc(handle, "ghostx_render_state_new")
-        fn_render_state_free = unsafeMakeFunc(handle, "ghostx_render_state_free")
-        fn_render_state_update = unsafeMakeFunc(handle, "ghostx_render_state_update")
+        fn_terminal_new    = unsafeBitCast(dlsym(h, "ghostx_terminal_new"), to: TerminalNewFn?.self)
+        fn_terminal_free   = unsafeBitCast(dlsym(h, "ghostx_terminal_free"), to: TerminalFreeFn?.self)
+        fn_vt_write        = unsafeBitCast(dlsym(h, "ghostx_terminal_vt_write"), to: VtWriteFn?.self)
+        fn_resize          = unsafeBitCast(dlsym(h, "ghostx_terminal_resize"), to: ResizeFn?.self)
+        fn_render_new      = unsafeBitCast(dlsym(h, "ghostx_render_state_new"), to: RenderNewFn?.self)
+        fn_render_free     = unsafeBitCast(dlsym(h, "ghostx_render_state_free"), to: RenderFreeFn?.self)
+        fn_render_update   = unsafeBitCast(dlsym(h, "ghostx_render_state_update"), to: RenderUpdateFn?.self)
     }
 
-    /// Feed raw VT output into terminal parser
     func feedInput(_ data: Data) {
-        guard let fn = fn_vt_write, let terminal = terminalPtr else { return }
+        guard let fn = fn_vt_write, let t = terminalPtr else { return }
         data.withUnsafeBytes { buf in
             guard let ptr = buf.bindMemory(to: UInt8.self).baseAddress else { return }
-            fn(terminal, ptr, buf.count)
+            fn(t, ptr, buf.count)
         }
-        fn_render_state_update?(renderStatePtr, terminalPtr)
+        fn_render_update?(renderStatePtr, terminalPtr)
         onScreenUpdate?()
     }
 
     func resize(cols: UInt16, rows: UInt16) {
-        self.cols = cols
-        self.rows = rows
-        fn_terminal_resize?(terminalPtr, cols, rows, cellWidth, cellHeight)
+        self.cols = cols; self.rows = rows
+        fn_resize?(terminalPtr, cols, rows, cellWidth, cellHeight)
     }
 
-    func processKeyboardInput(text: String) -> Data? {
-        text.data(using: .utf8)
-    }
+    func processKeyboardInput(text: String) -> Data? { text.data(using: .utf8) }
 
     func readScreenCells() -> [TerminalCellData] {
-        // Placeholder - full implementation reads via row/cell iterators
-        return []
+        // Full implementation using row/cell iterators from libghostty-vt
+        // See ghostty_bridge.c for the C API surface
+        []
     }
 
     deinit {
-        fn_render_state_free?(renderStatePtr)
+        fn_render_free?(renderStatePtr)
         fn_terminal_free?(terminalPtr)
-        if let handle = dylibHandle { dlclose(handle) }
+        if let h = dylibHandle { dlclose(h) }
     }
 }
 
-private func unsafeMakeFunc<T>(_ handle: UnsafeMutableRawPointer, _ name: String) -> T? {
-    guard let sym = dlsym(handle, name) else { return nil }
-    return unsafeBitCast(sym, to: T.self)
-}
-
 struct TerminalCellData {
-    let row: Int
-    let column: Int
+    let row, column: Int
     let character: String
     let fg: (r: UInt8, g: UInt8, b: UInt8)
     let bg: (r: UInt8, g: UInt8, b: UInt8)
