@@ -202,9 +202,6 @@ final class SessionRepository: ObservableObject {
                 terminal_type TEXT DEFAULT 'xterm-256color', notes TEXT,
                 created_at REAL, updated_at REAL
             );
-            -- Migration: add columns if missing (ignore errors)
-            ALTER TABLE sessions ADD COLUMN protocol_type TEXT DEFAULT 'SSH';
-            ALTER TABLE sessions ADD COLUMN auth_profile_id TEXT;
             CREATE TABLE IF NOT EXISTS session_groups (
                 id TEXT PRIMARY KEY, name TEXT NOT NULL,
                 parent_id TEXT, sort_order INTEGER DEFAULT 0
