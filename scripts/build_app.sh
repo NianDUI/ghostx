@@ -88,5 +88,11 @@ if [ -n "$DYLIB" ]; then
     echo "Copied libghostty-vt dylib"
 fi
 
+# Copy libssh2 dylib
+if [ -f "$PROJECT_DIR/src/GhostXBridge/libssh2.dylib" ]; then
+    cp "$PROJECT_DIR/src/GhostXBridge/libssh2.dylib" "$MACOS_DIR/"
+    echo "Copied libssh2 dylib"
+fi
+
 echo "App bundle created at $APP_DIR"
 echo "Run with: open $APP_DIR"

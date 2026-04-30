@@ -1,19 +1,19 @@
 import Foundation
 
-/// SSH connection manager using libssh2
-/// In production, this uses libssh2 C API. For prototype, it shells out to /usr/bin/ssh
+/// SSH connection manager. Delegates to Libssh2Client (native) or Process-based ssh (fallback).
 final class SSHClient: ObservableObject {
     private var process: Process?
     private var outputPipe: Pipe?
     private var inputPipe: Pipe?
     private var errorPipe: Pipe?
+    private var nativeClient: Libssh2Client?
 
     let config: SessionConfig
     let credential: Credential?
     var tunnels: [TunnelConfig] = []
     var proxy: ProxyConfig?
 
-    @Published var isConnected = false
+    @Published var isConnected = false { didSet { if !isConnected { connectionState = .disconnected } } }
     @Published var lastError: String?
     @Published var connectionState: ConnectionState = .disconnected
 
@@ -21,7 +21,7 @@ final class SSHClient: ObservableObject {
         case disconnected, connecting, connected, failed
     }
 
-    // Output callback - raw bytes from the remote shell
+    // Output callback
     var onOutput: ((Data) -> Void)?
     var onDisconnect: ((Int) -> Void)?
 
@@ -32,7 +32,31 @@ final class SSHClient: ObservableObject {
         self.credential = credential
     }
 
+    /// Wrap a Libssh2Client to provide the same interface
+    convenience init(native: Libssh2Client) {
+        self.init(config: native.config, credential: nil)
+        self.nativeClient = native
+        native.onOutput = { [weak self] data in self?.onOutput?(data) }
+        native.onDisconnect = { [weak self] code in
+            self?.isConnected = false
+            self?.connectionState = .disconnected
+            self?.onDisconnect?(code)
+        }
+    }
+
+    var isNative: Bool { nativeClient != nil }
+
     func connect(terminalType: String = "xterm-256color") async throws {
+        if let native = nativeClient {
+            native.connect()
+            isConnected = native.isConnected
+            connectionState = native.state
+            return
+        }
+        try await connectViaProcess(terminalType: terminalType)
+    }
+
+    private func connectViaProcess(terminalType: String) async throws {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/ssh")
         var args = [
@@ -120,15 +144,18 @@ final class SSHClient: ObservableObject {
     }
 
     func send(_ text: String) {
+        if let native = nativeClient { native.send(text); return }
         guard let data = text.data(using: .utf8) else { return }
         inputPipe?.fileHandleForWriting.write(data)
     }
 
     func send(_ data: Data) {
+        if let native = nativeClient { native.send(data); return }
         inputPipe?.fileHandleForWriting.write(data)
     }
 
     func resize(cols: Int, rows: Int) {
+        if let native = nativeClient { native.resize(cols: cols, rows: rows); return }
         guard let pid = process?.processIdentifier else { return }
         // Send SIGWINCH-equivalent via ioctl
         var winSize = winsize(
@@ -148,13 +175,10 @@ final class SSHClient: ObservableObject {
     }
 
     func disconnect() {
-        // Send exit to shell
+        if let native = nativeClient { native.disconnect(); return }
         send("exit\n")
-        // Force kill after 2s if still running
         DispatchQueue.global().asyncAfter(deadline: .now() + 2) { [weak self] in
-            if self?.process?.isRunning == true {
-                self?.process?.terminate()
-            }
+            if self?.process?.isRunning == true { self?.process?.terminate() }
         }
     }
 

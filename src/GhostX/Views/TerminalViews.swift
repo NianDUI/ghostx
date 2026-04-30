@@ -13,9 +13,15 @@ final class TabManager: ObservableObject {
         var client: SSHClient
     }
 
-    func openTab(for session: SessionConfig) {
-        let credential = CredentialStore.shared.load(host: session.host, username: session.username)
-        let client = SSHClient(config: session, credential: credential)
+    func openTab(for session: SessionConfig, useNative: Bool = true) {
+        var client: SSHClient
+        if useNative {
+            let nativeClient = Libssh2Client(config: session)
+            client = SSHClient(native: nativeClient)
+        } else {
+            let credential = CredentialStore.shared.load(host: session.host, username: session.username)
+            client = SSHClient(config: session, credential: credential)
+        }
         client.proxy = session.proxy
         // Load tunnels for this session
         if let data = UserDefaults.standard.data(forKey: "GhostX.tunnels.\(session.id.uuidString)"),
