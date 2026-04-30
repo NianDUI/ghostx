@@ -126,4 +126,35 @@ enum L10n {
     static var authProfileDesc: String { isZh ? "可复用的认证配置，应用于多个会话" : "Reusable credential configs applied to multiple sessions" }
     static var generateSSHKey: String { isZh ? "生成 SSH 密钥" : "Generate SSH Key" }
     static var wordSepDesc: String { isZh ? "双击选词时的分隔字符" : "Characters that delimit words for double-click selection" }
+    static var localFiles: String { isZh ? "本地" : "Local" }
+    static var remoteFiles: String { isZh ? "远程" : "Remote" }
+    static var transfers: String { isZh ? "传输" : "Transfers" }
+    static var goUp: String { isZh ? "上级" : "Go up" }
+    static var tunnelType: String { isZh ? "类型" : "Type" }
+    static var source: String { isZh ? "来源" : "Source" }
+    static var destination: String { isZh ? "目标" : "Destination" }
+    static var newTrigger: String { isZh ? "新建触发器" : "New Trigger" }
+    static var action: String { isZh ? "动作" : "Action" }
+    static var patternLabel: String { isZh ? "正则模式" : "Regex Pattern" }
+    static var notifyAction: String { isZh ? "通知" : "Notify" }
+    static var sendCmdAction: String { isZh ? "发送命令" : "Send Command" }
+    static var disconnectAction: String { isZh ? "断开连接" : "Disconnect" }
+    static var highlightAction: String { isZh ? "高亮" : "Highlight" }
+    static var presetThemes: String { isZh ? "预设主题" : "Preset Themes" }
+    static var createTheme: String { isZh ? "创建主题" : "Create" }
+    static var bulkEdit: String { isZh ? "批量编辑" : "Bulk Edit" }
+    static var editingSessions: String { isZh ? "编辑会话" : "Editing" }
+    static var setKeepAlive: String { isZh ? "设置心跳" : "Set keep alive" }
+    static var setProxy: String { isZh ? "设置代理" : "Set proxy" }
+    static var setKey: String { isZh ? "设置密钥" : "Set key" }
+    static var setTerminal: String { isZh ? "设置终端类型" : "Set terminal type" }
+    static var applyTo: String { isZh ? "应用到" : "Apply to" }
+    static var offset: String { isZh ? "偏移" : "Offset" }
+    static var hexViewer: String { isZh ? "十六进制查看器" : "Hex Viewer" }
+    static var noSessionsFound: String { isZh ? "未找到会话" : "No sessions found" }
+    static var noXshFiles: String { isZh ? "所选目录中未找到 .xsh 文件" : "No .xsh files found in the selected directory." }
+    static var importComplete: String { isZh ? "导入完成" : "Import Complete" }
+    static var sessionsGroups: String { isZh ? "导入了会话" : "Imported" }
+    static var inGroups: String { isZh ? "个分组" : "groups" }
+    static var ok: String { isZh ? "确定" : "OK" }
 }

@@ -288,16 +288,16 @@ struct SessionSidebar: View {
         let sessions = XshellImporter.scanDirectory(url.path)
         guard !sessions.isEmpty else {
             let alert = NSAlert()
-            alert.messageText = "No sessions found"
-            alert.informativeText = "No .xsh files found in the selected directory."
+            alert.messageText = L10n.noSessionsFound
+            alert.informativeText = L10n.noXshFiles
             alert.runModal()
             return
         }
 
         let result = XshellImporter.importToRepository(sessions, repo: repo)
         let alert = NSAlert()
-        alert.messageText = "Import Complete"
-        alert.informativeText = "Imported \(result.imported) sessions in \(result.groups) groups."
+        alert.messageText = L10n.importComplete
+        alert.informativeText = "\(L10n.sessionsGroups) \(result.imported) \(L10n.inGroups) \(result.groups)"
         alert.runModal()
     }
 }

@@ -7,7 +7,7 @@ struct ThemePickerView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Terminal Theme")
+            Text(L10n.themes)
                 .font(.title3)
 
             Divider()
@@ -25,7 +25,7 @@ struct ThemePickerView: View {
 
             // Actions
             HStack {
-                Button("New Theme...") { showEditor = true }
+                Button(L10n.newTheme) { showEditor = true }
                     .buttonStyle(.bordered)
                 Button("Import...") { importTheme() }
                     .buttonStyle(.borderless)

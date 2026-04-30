@@ -9,7 +9,7 @@ struct TunnelManagerView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Port Forwarding & Tunnels")
+            Text(L10n.tunnels)
                 .font(.title2)
                 .padding(.top)
 
@@ -18,9 +18,9 @@ struct TunnelManagerView: View {
                     Image(systemName: "point.3.connected.trianglepath.dotted")
                         .font(.system(size: 32))
                         .foregroundColor(.secondary)
-                    Text("No tunnels configured")
+                    Text(L10n.noTunnels)
                         .foregroundColor(.secondary)
-                    Text("Add a tunnel to forward ports between local and remote hosts.")
+                    Text(L10n.tunnelDetail)
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -175,7 +175,7 @@ struct TunnelEditSheet: View {
             Text(editing != nil ? "Edit Tunnel" : "New Tunnel")
                 .font(.title2)
 
-            TextField("Name", text: $name, prompt: Text("Optional name"))
+            TextField(L10n.name, text: $name)
 
             Picker("Type:", selection: $type) {
                 Text("Local (-L)").tag(TunnelConfig.TunnelType.local)
@@ -187,7 +187,7 @@ struct TunnelEditSheet: View {
             if type != .dynamic {
                 HStack {
                     VStack(alignment: .leading) {
-                        Text("Source").font(.caption).foregroundColor(.secondary)
+                        Text(L10n.source).font(.caption).foregroundColor(.secondary)
                         HStack {
                             TextField("host", text: $localHost).frame(width: 100)
                             Text(":").foregroundColor(.secondary)
@@ -198,7 +198,7 @@ struct TunnelEditSheet: View {
                     Image(systemName: "arrow.right").foregroundColor(.secondary)
                     Spacer()
                     VStack(alignment: .leading) {
-                        Text("Destination").font(.caption).foregroundColor(.secondary)
+                        Text(L10n.destination).font(.caption).foregroundColor(.secondary)
                         HStack {
                             TextField("host", text: $remoteHost).frame(width: 100)
                             Text(":").foregroundColor(.secondary)

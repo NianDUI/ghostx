@@ -24,14 +24,14 @@ struct BulkEditView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Bulk Edit Sessions")
+            Text(L10n.bulkEdit)
                 .font(.title2)
-            Text("Editing \(selectedIDs.count) session(s)")
+            Text("\(L10n.editingSessions) \(selectedIDs.count)")
                 .font(.caption).foregroundColor(.secondary)
 
             Form {
                 // Keep Alive
-                Section("Keep Alive (seconds)") {
+                Section(L10n.keepAlive) {
                     Toggle("Set keep alive", isOn: $setKeepAlive)
                     if setKeepAlive {
                         TextField("Interval (s)", text: $keepAliveValue, prompt: Text("60"))
@@ -39,7 +39,7 @@ struct BulkEditView: View {
                 }
 
                 // Proxy
-                Section("Proxy") {
+                Section(L10n.proxySettings) {
                     Toggle("Set proxy", isOn: $setProxy)
                     if setProxy {
                         Toggle("Enabled", isOn: $proxyEnabled)
@@ -57,7 +57,7 @@ struct BulkEditView: View {
                 }
 
                 // SSH Key
-                Section("SSH Key") {
+                Section(L10n.privateKey) {
                     Toggle("Set private key path", isOn: $setKey)
                     if setKey {
                         HStack {
@@ -72,7 +72,7 @@ struct BulkEditView: View {
                 }
 
                 // Terminal
-                Section("Terminal") {
+                Section(L10n.terminal) {
                     Toggle("Set terminal type", isOn: $setTerminal)
                     if setTerminal {
                         TextField("TERM", text: $terminalType)

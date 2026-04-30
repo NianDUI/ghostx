@@ -35,7 +35,7 @@ struct SFTPDualPane: View {
             HStack {
                 if let err = errorMsg { Text(err).font(.caption).foregroundColor(.red) }
                 Spacer()
-                Text("\(selectedLocal.count + selectedRemote.count) selected")
+                Text("\(selectedLocal.count + selectedRemote.count) \(L10n.selectedCount)")
                     .font(.caption).foregroundColor(.secondary)
             }
             .padding(.horizontal, 8).padding(.vertical, 2)
@@ -51,7 +51,7 @@ struct SFTPDualPane: View {
             VStack(spacing: 0) {
                 HStack {
                     Image(systemName: "desktopcomputer").foregroundColor(.blue)
-                    Text("Local").font(.caption.bold())
+                    Text(L10n.localFiles).font(.caption.bold())
                     Spacer()
                     Button(action: goUpLocal) {
                         Image(systemName: "arrow.up").font(.caption)
@@ -90,7 +90,7 @@ struct SFTPDualPane: View {
             HStack(spacing: 8) {
                 Button(action: { uploadFile() }) {
                     Image(systemName: "arrow.up.doc")
-                    Text("Upload").font(.caption)
+                    Text(L10n.upload).font(.caption)
                 }
                 .buttonStyle(.borderless)
                 Spacer()
@@ -106,7 +106,7 @@ struct SFTPDualPane: View {
         VStack(spacing: 0) {
             HStack {
                 Image(systemName: "server.rack").foregroundColor(.green)
-                Text("Remote").font(.caption.bold())
+                Text(L10n.remoteFiles).font(.caption.bold())
                 Spacer()
                 Button(action: goUpRemote) {
                     Image(systemName: "arrow.up").font(.caption)
@@ -162,7 +162,7 @@ struct SFTPDualPane: View {
     private var transferQueueView: some View {
         VStack(spacing: 2) {
             HStack {
-                Text("Transfers").font(.caption.bold())
+                Text(L10n.transfers).font(.caption.bold())
                 Spacer()
                 Text("\(transfers.filter { $0.status == .done }.count)/\(transfers.count)").font(.caption).foregroundColor(.secondary)
                 Button("Clear") { transfers.removeAll() }.font(.caption).buttonStyle(.borderless)

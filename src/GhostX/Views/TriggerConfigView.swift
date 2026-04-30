@@ -9,12 +9,12 @@ struct TriggerConfigView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Trigger Configuration")
+            Text(L10n.triggerConfig)
                 .font(.title2)
                 .padding(.top)
 
             // Add new trigger form
-            GroupBox("New Trigger") {
+            GroupBox(L10n.newTrigger) {
                 VStack(spacing: 8) {
                     HStack {
                         TextField("Name", text: $newName)
@@ -23,10 +23,10 @@ struct TriggerConfigView: View {
                             .textFieldStyle(.roundedBorder)
                     }
                     HStack {
-                        Picker("Action:", selection: $newAction) {
-                            Text("Notify").tag(Trigger.TriggerAction.notify("匹配: {line}"))
-                            Text("Send Command").tag(Trigger.TriggerAction.runCommand(""))
-                            Text("Disconnect").tag(Trigger.TriggerAction.disconnect)
+                        Picker(L10n.action, selection: $newAction) {
+                            Text(L10n.notifyAction).tag(Trigger.TriggerAction.notify("匹配: {line}"))
+                            Text(L10n.sendCmdAction).tag(Trigger.TriggerAction.runCommand(""))
+                            Text(L10n.disconnectAction).tag(Trigger.TriggerAction.disconnect)
                         }
                         .pickerStyle(.segmented)
                         Spacer()
