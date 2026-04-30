@@ -47,10 +47,17 @@ struct SettingsView: View {
     @AppStorage("defaultKeepAlive") private var keepAlive = 60
     @AppStorage("fontSize") private var fontSize = 13.0
     @AppStorage("GhostX.wordSeparators") private var wordSeparators = " \t\n\"'`@$><=;|&{}()[]#,"
+    @AppStorage("GhostX.language") private var language = "zh"
 
     var body: some View {
         TabView {
             Form {
+                Picker("Language / 语言:", selection: $language) {
+                    Text("中文").tag("zh")
+                    Text("English").tag("en")
+                }
+                Text("Restart app to apply language change")
+                    .font(.caption).foregroundColor(.secondary)
                 TextField("Terminal Type:", text: $terminalType)
                 TextField("Keep Alive (s):", value: $keepAlive, format: .number)
             }

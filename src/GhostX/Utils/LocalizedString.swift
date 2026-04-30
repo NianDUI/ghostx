@@ -1,9 +1,16 @@
 import Foundation
 
-/// Simple i18n string lookup. Add new strings here for both languages.
+/// Simple i18n string lookup with language preference support.
 enum L10n {
-    private static let locale = Locale.current
-    private static var isZh: Bool { locale.language.languageCode?.identifier == "zh" }
+    /// Language preference: "zh", "en", or nil (system default)
+    static var preferredLanguage: String? {
+        get { UserDefaults.standard.string(forKey: "GhostX.language") }
+        set { UserDefaults.standard.set(newValue, forKey: "GhostX.language") }
+    }
+    private static var isZh: Bool {
+        if let pref = preferredLanguage { return pref == "zh" }
+        return Locale.current.language.languageCode?.identifier == "zh"
+    }
 
     // MARK: - App
     static var appName: String { "GhostX" }
