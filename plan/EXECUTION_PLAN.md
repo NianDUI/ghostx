@@ -221,7 +221,7 @@ class CommandBus {
 
 ### All Remaining Items (low priority)
 - [ ] Tab drag-to-reorder
-- [ ] Panel auto-hide with hover reveal
+- [x] Panel auto-hide with hover reveal
 - [ ] Drag-drop file upload in SFTP
 - [x] Customizable word separators for double-click
 - [~] Kerberos/GSSAPI — WON'T IMPLEMENT

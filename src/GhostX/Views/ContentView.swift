@@ -14,6 +14,7 @@ struct ContentView: View {
     @State private var showBulkEdit = false
     @State private var bulkEditIDs: Set<UUID> = []
     @State private var sidebarCollapsed = false
+    @State private var sidebarPinned = true  // pin prevents auto-hide
     @State private var sidebarWidth: CGFloat = 260
     @State private var selectedGroupID: UUID?
 
@@ -37,8 +38,7 @@ struct ContentView: View {
                     }
                     .transition(.move(edge: .leading))
                     .onHover { hovering in
-                        // Auto-hide when mouse leaves sidebar area
-                        if !hovering {
+                        if !hovering && !sidebarPinned {
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                                 withAnimation(.easeInOut(duration: 0.2)) {
                                     sidebarCollapsed = true
@@ -48,14 +48,21 @@ struct ContentView: View {
                     }
                 }
 
-                // Hover zone + toggle button (always visible)
+                // Hover zone + toggle/pin buttons (always visible)
                 VStack {
                     Button(action: { withAnimation(.easeInOut(duration: 0.2)) { sidebarCollapsed.toggle() } }) {
                         Image(systemName: sidebarCollapsed ? "sidebar.right" : "sidebar.left")
                             .font(.system(size: 10))
                     }
                     .buttonStyle(.borderless)
-                    .padding(.vertical, 4)
+                    Button(action: { sidebarPinned.toggle() }) {
+                        Image(systemName: sidebarPinned ? "pin.fill" : "pin")
+                            .font(.system(size: 8))
+                            .foregroundColor(sidebarPinned ? .accentColor : .secondary)
+                    }
+                    .buttonStyle(.borderless)
+                    .help(sidebarPinned ? "Unpin (enable auto-hide)" : "Pin sidebar")
+                    .padding(.top, 2)
                     Spacer()
                 }
                 .frame(width: 16)
@@ -138,6 +145,7 @@ struct ContentView: View {
         }
         .onAppear {
             tabManager.splitManager = splitManager
+            sidebarPinned = UserDefaults.standard.object(forKey: "GhostX.sidebarPinned") as? Bool ?? true
             sidebarCollapsed = UserDefaults.standard.bool(forKey: "GhostX.sidebarCollapsed")
             let savedWidth = UserDefaults.standard.double(forKey: "GhostX.sidebarWidth")
             sidebarWidth = min(400, max(180, savedWidth))
@@ -146,6 +154,7 @@ struct ContentView: View {
             NSApp.activate(ignoringOtherApps: true)
         }
         .onChange(of: sidebarCollapsed) { _, v in UserDefaults.standard.set(v, forKey: "GhostX.sidebarCollapsed") }
+        .onChange(of: sidebarPinned) { _, v in UserDefaults.standard.set(v, forKey: "GhostX.sidebarPinned") }
         .onChange(of: sidebarWidth) { _, v in UserDefaults.standard.set(v, forKey: "GhostX.sidebarWidth") }
         .sheet(isPresented: $showSFTP) {
             if let activeTab = tabManager.tabs.first(where: { $0.id == tabManager.activeTabID }) {
