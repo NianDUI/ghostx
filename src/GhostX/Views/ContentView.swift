@@ -99,9 +99,15 @@ struct ContentView: View {
         }
         .onAppear {
             tabManager.splitManager = splitManager
+            sidebarCollapsed = UserDefaults.standard.bool(forKey: "GhostX.sidebarCollapsed")
+            let savedWidth = UserDefaults.standard.double(forKey: "GhostX.sidebarWidth")
+            sidebarWidth = min(400, max(180, savedWidth))
+            if sidebarWidth == 0 { sidebarWidth = 260 }
             NSApp.setActivationPolicy(.regular)
             NSApp.activate(ignoringOtherApps: true)
         }
+        .onChange(of: sidebarCollapsed) { _, v in UserDefaults.standard.set(v, forKey: "GhostX.sidebarCollapsed") }
+        .onChange(of: sidebarWidth) { _, v in UserDefaults.standard.set(v, forKey: "GhostX.sidebarWidth") }
         .sheet(isPresented: $showSFTP) {
             if let activeTab = tabManager.tabs.first(where: { $0.id == tabManager.activeTabID }) {
                 SFTPDualPane(config: activeTab.config, nativeClient: activeTab.client.nativeClient)
