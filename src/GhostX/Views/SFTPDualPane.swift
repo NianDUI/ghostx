@@ -48,48 +48,54 @@ struct SFTPDualPane: View {
 
     private var localPane: some View {
         VStack(spacing: 0) {
-            HStack {
-                Image(systemName: "desktopcomputer").foregroundColor(.blue)
-                Text("Local").font(.caption.bold())
-                Spacer()
-                Button(action: goUpLocal) {
-                    Image(systemName: "arrow.up").font(.caption)
-                }.buttonStyle(.borderless).disabled(localPath == "/")
-            }
-            .padding(.horizontal, 8).padding(.vertical, 2)
-
-            TextField("", text: $localPath, prompt: Text("/path"))
-                .font(.caption).textFieldStyle(.roundedBorder)
-                .padding(.horizontal, 8)
-                .onSubmit { loadLocal() }
-
-            Divider()
-
-            List(localFiles) { file in
+            VStack(spacing: 0) {
                 HStack {
-                    Image(systemName: file.icon)
-                        .foregroundColor(file.isDirectory ? .blue : .secondary)
-                    Text(file.name).font(.caption).lineLimit(1)
+                    Image(systemName: "desktopcomputer").foregroundColor(.blue)
+                    Text("Local").font(.caption.bold())
                     Spacer()
-                    Text(file.sizeFormatted).font(.caption.monospacedDigit()).foregroundColor(.secondary)
+                    Button(action: goUpLocal) {
+                        Image(systemName: "arrow.up").font(.caption)
+                    }.buttonStyle(.borderless).disabled(localPath == "/")
                 }
-                .contentShape(Rectangle())
-                .onTapGesture(count: 2) {
-                    if file.isDirectory {
-                        localPath = file.path
-                        loadLocal()
+                .padding(.horizontal, 8).padding(.vertical, 2)
+
+                TextField("", text: $localPath, prompt: Text("/path"))
+                    .font(.caption).textFieldStyle(.roundedBorder)
+                    .padding(.horizontal, 8)
+                    .onSubmit { loadLocal() }
+
+                Divider()
+
+                List(localFiles) { file in
+                    HStack {
+                        Image(systemName: file.icon)
+                            .foregroundColor(file.isDirectory ? .blue : .secondary)
+                        Text(file.name).font(.caption).lineLimit(1)
+                        Spacer()
+                        Text(file.sizeFormatted).font(.caption.monospacedDigit()).foregroundColor(.secondary)
                     }
-                }
-                .onTapGesture {
-                    if selectedLocal.contains(file.path) {
-                        selectedLocal.remove(file.path)
-                    } else {
-                        selectedLocal.insert(file.path)
+                    .contentShape(Rectangle())
+                    .onTapGesture(count: 2) {
+                        if file.isDirectory { localPath = file.path; loadLocal() }
                     }
+                    .onTapGesture {
+                        if selectedLocal.contains(file.path) { selectedLocal.remove(file.path) }
+                        else { selectedLocal.insert(file.path) }
+                    }
+                    .background(selectedLocal.contains(file.path) ? Color.accentColor.opacity(0.2) : Color.clear)
                 }
-                .background(selectedLocal.contains(file.path) ? Color.accentColor.opacity(0.2) : Color.clear)
+                .listStyle(.plain)
             }
-            .listStyle(.plain)
+
+            HStack(spacing: 8) {
+                Button(action: { uploadFile() }) {
+                    Image(systemName: "arrow.up.doc")
+                    Text("Upload").font(.caption)
+                }
+                .buttonStyle(.borderless)
+                Spacer()
+            }
+            .padding(2)
         }
         .frame(minWidth: 200)
     }
@@ -212,6 +218,21 @@ struct SFTPDualPane: View {
         remotePath = (remotePath as NSString).deletingLastPathComponent
         if remotePath.isEmpty { remotePath = "/" }
         loadRemote()
+    }
+
+    private func uploadFile() {
+        let panel = NSOpenPanel()
+        panel.allowsMultipleSelection = true
+        panel.canChooseDirectories = false
+        guard panel.runModal() == .OK else { return }
+        let rp = remotePath
+        let svc = service
+        for url in panel.urls {
+            let dest = (rp as NSString).appendingPathComponent(url.lastPathComponent)
+            svc.upload(url.path, to: dest) { _ in }
+        }
+        // Refresh after a brief delay
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { self.loadRemote() }
     }
 }
 
