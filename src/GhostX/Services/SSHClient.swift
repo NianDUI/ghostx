@@ -42,6 +42,16 @@ final class SSHClient: ObservableObject {
             self?.connectionState = .disconnected
             self?.onDisconnect?(code)
         }
+        native.onPasswordRequired = { host, user in
+            var password: String?
+            let semaphore = DispatchSemaphore(value: 0)
+            DispatchQueue.main.async {
+                password = PasswordPrompt.ask(host: host, username: user, saveToKeychain: true)
+                semaphore.signal()
+            }
+            semaphore.wait()
+            return password
+        }
     }
 
     var isNative: Bool { nativeClient != nil }

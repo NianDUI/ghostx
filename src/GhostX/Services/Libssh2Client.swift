@@ -16,6 +16,10 @@ final class Libssh2Client: ObservableObject {
     @Published var state: SSHClient.ConnectionState = .disconnected
     var onOutput: ((Data) -> Void)?
     var onDisconnect: ((Int) -> Void)?
+    var onPasswordRequired: ((String, String) -> String?)?  // (host, user) -> password
+    private var autoReconnect = true
+    private var reconnectAttempts = 0
+    private let maxReconnectAttempts = 3
 
     // Stored function pointers (non-optional for simplicity)
     typealias VoidFn = @convention(c) () -> Void
@@ -133,6 +137,12 @@ final class Libssh2Client: ObservableObject {
         } else if let cred = CredentialStore.shared.load(host: config.host, username: config.username),
                   case .password(let pw) = cred.secret {
             rc = _authPassword(s, config.username, pw)
+        } else if config.authMethod == .password {
+            // Prompt for password via callback
+            guard let password = onPasswordRequired?(config.host, config.username) else {
+                fail("Password required"); return
+            }
+            rc = _authPassword(s, config.username, password)
         } else {
             fail("No credentials"); return
         }
@@ -147,6 +157,7 @@ final class Libssh2Client: ObservableObject {
 
         isConnected = true
         state = .connected
+        reconnectAttempts = 0 // reset on successful connect
         shouldStop = false
         readThread = Thread { [weak self] in self?.readLoop() }
         readThread?.start()
@@ -170,7 +181,18 @@ final class Libssh2Client: ObservableObject {
             if _channelEof(ch) != 0 { break }
         }
         DispatchQueue.main.async { [weak self] in
-            self?.isConnected = false; self?.state = .disconnected; self?.onDisconnect?(0)
+            guard let self else { return }
+            self.isConnected = false
+            self.state = .disconnected
+            self.onDisconnect?(0)
+            // Auto-reconnect
+            if self.autoReconnect && self.reconnectAttempts < self.maxReconnectAttempts {
+                self.reconnectAttempts += 1
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
+                    self?.state = .connecting
+                    self?.connect()
+                }
+            }
         }
     }
 
