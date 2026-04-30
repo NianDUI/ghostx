@@ -34,9 +34,10 @@ final class SessionRepository: ObservableObject {
 
         let sql = """
             INSERT OR REPLACE INTO sessions
-            (id, name, host, port, username, auth_method, private_key_path,
-             group_id, keepalive_interval, login_script, terminal_type, notes, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (id, name, host, port, username, auth_method, protocol_type,
+             private_key_path, auth_profile_id, group_id,
+             keepalive_interval, login_script, terminal_type, notes, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """
         var stmt: OpaquePointer?
         guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK else {
@@ -50,14 +51,16 @@ final class SessionRepository: ObservableObject {
         sqlite3_bind_int(stmt!, 4, Int32(config.port))
         sqlite3_bind_text(stmt!, 5, config.username, -1, TRANSIENT)
         sqlite3_bind_text(stmt!, 6, config.authMethod.rawValue, -1, TRANSIENT)
-        if let keyPath = config.privateKeyPath { sqlite3_bind_text(stmt!, 7, keyPath, -1, TRANSIENT) } else { sqlite3_bind_null(stmt!, 7) }
-        bindOptionalUUID(stmt!, 8, config.groupID)
-        sqlite3_bind_int(stmt!, 9, Int32(config.keepAliveInterval))
-        if let script = config.loginScript { sqlite3_bind_text(stmt!, 10, script, -1, TRANSIENT) } else { sqlite3_bind_null(stmt!, 10) }
-        sqlite3_bind_text(stmt!, 11, config.terminalType, -1, TRANSIENT)
-        if let notes = config.notes { sqlite3_bind_text(stmt!, 12, notes, -1, TRANSIENT) } else { sqlite3_bind_null(stmt!, 12) }
-        sqlite3_bind_double(stmt!, 13, config.createdAt.timeIntervalSince1970)
-        sqlite3_bind_double(stmt!, 14, config.updatedAt.timeIntervalSince1970)
+        sqlite3_bind_text(stmt!, 7, config.protocolType.rawValue, -1, TRANSIENT)
+        if let keyPath = config.privateKeyPath { sqlite3_bind_text(stmt!, 8, keyPath, -1, TRANSIENT) } else { sqlite3_bind_null(stmt!, 8) }
+        bindOptionalUUID(stmt!, 9, config.authProfileID)
+        bindOptionalUUID(stmt!, 10, config.groupID)
+        sqlite3_bind_int(stmt!, 11, Int32(config.keepAliveInterval))
+        if let script = config.loginScript { sqlite3_bind_text(stmt!, 12, script, -1, TRANSIENT) } else { sqlite3_bind_null(stmt!, 12) }
+        sqlite3_bind_text(stmt!, 13, config.terminalType, -1, TRANSIENT)
+        if let notes = config.notes { sqlite3_bind_text(stmt!, 14, notes, -1, TRANSIENT) } else { sqlite3_bind_null(stmt!, 14) }
+        sqlite3_bind_double(stmt!, 15, config.createdAt.timeIntervalSince1970)
+        sqlite3_bind_double(stmt!, 16, config.updatedAt.timeIntervalSince1970)
 
         guard sqlite3_step(stmt) == SQLITE_DONE else {
             throw RepositoryError.sqliteError(String(cString: sqlite3_errmsg(db)))
@@ -193,11 +196,15 @@ final class SessionRepository: ObservableObject {
                 id TEXT PRIMARY KEY, name TEXT, host TEXT NOT NULL,
                 port INTEGER DEFAULT 22, username TEXT NOT NULL,
                 auth_method TEXT DEFAULT 'key',
-                private_key_path TEXT, group_id TEXT,
+                protocol_type TEXT DEFAULT 'SSH',
+                private_key_path TEXT, auth_profile_id TEXT, group_id TEXT,
                 keepalive_interval INTEGER DEFAULT 60, login_script TEXT,
                 terminal_type TEXT DEFAULT 'xterm-256color', notes TEXT,
                 created_at REAL, updated_at REAL
             );
+            -- Migration: add columns if missing (ignore errors)
+            ALTER TABLE sessions ADD COLUMN protocol_type TEXT DEFAULT 'SSH';
+            ALTER TABLE sessions ADD COLUMN auth_profile_id TEXT;
             CREATE TABLE IF NOT EXISTS session_groups (
                 id TEXT PRIMARY KEY, name TEXT NOT NULL,
                 parent_id TEXT, sort_order INTEGER DEFAULT 0
@@ -234,16 +241,18 @@ final class SessionRepository: ObservableObject {
             name: String(cString: coalesce(stmt, 1, "")),
             host: String(cString: host),
             port: UInt16(sqlite3_column_int(stmt, 3)),
+            protocolType: ProtocolType(rawValue: String(cString: coalesce(stmt, 6, "SSH"))) ?? .ssh,
             username: String(cString: user),
             authMethod: AuthMethod(rawValue: String(cString: coalesce(stmt, 5, "key"))) ?? .key,
+            authProfileID: stmt[8].flatMap { UUID(uuidString: String(cString: $0)) },
             privateKeyPath: stmt[7].map { String(cString: $0) },
-            groupID: stmt[8].flatMap { UUID(uuidString: String(cString: $0)) },
-            keepAliveInterval: Int(sqlite3_column_int(stmt, 9)),
-            loginScript: stmt[10].map { String(cString: $0) },
-            terminalType: String(cString: coalesce(stmt, 11, "xterm-256color")),
-            notes: stmt[12].map { String(cString: $0) },
-            createdAt: Date(timeIntervalSince1970: sqlite3_column_double(stmt, 13)),
-            updatedAt: Date(timeIntervalSince1970: sqlite3_column_double(stmt, 14))
+            groupID: stmt[9].flatMap { UUID(uuidString: String(cString: $0)) },
+            keepAliveInterval: Int(sqlite3_column_int(stmt, 10)),
+            loginScript: stmt[11].map { String(cString: $0) },
+            terminalType: String(cString: coalesce(stmt, 12, "xterm-256color")),
+            notes: stmt[13].map { String(cString: $0) },
+            createdAt: Date(timeIntervalSince1970: sqlite3_column_double(stmt, 14)),
+            updatedAt: Date(timeIntervalSince1970: sqlite3_column_double(stmt, 15))
         )
     }
 
