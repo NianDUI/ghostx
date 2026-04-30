@@ -97,6 +97,7 @@ final class Libssh2Client: ObservableObject {
         _channelEof   = getSym(h, "libssh2_channel_eof")
         _keepaliveConfig = getSym(h, "libssh2_keepalive_config")
         _lastErrno    = getSym(h, "libssh2_session_last_errno")
+        loadSftpSymbols(h)
     }
 
     private func getSym<T>(_ handle: UnsafeMutableRawPointer, _ name: String) -> T {
@@ -219,5 +220,136 @@ final class Libssh2Client: ObservableObject {
         return fd
     }
 
+    // MARK: - SFTP
+
+    private var _sftpInit: (@convention(c) (UnsafeMutableRawPointer?) -> UnsafeMutableRawPointer?)? = nil
+    private var _sftpShutdown: (@convention(c) (UnsafeMutableRawPointer?) -> Int32)? = nil
+    private var _sftpOpen: (@convention(c) (UnsafeMutableRawPointer?, UnsafePointer<CChar>?, UInt64, Int64, Int32) -> UnsafeMutableRawPointer?)? = nil
+    private var _sftpRead: (@convention(c) (UnsafeMutableRawPointer?, UnsafeMutablePointer<CChar>?, Int) -> Int)? = nil
+    private var _sftpWrite: (@convention(c) (UnsafeMutableRawPointer?, UnsafePointer<CChar>?, Int) -> Int)? = nil
+    private var _sftpClose: (@convention(c) (UnsafeMutableRawPointer?) -> Int32)? = nil
+    private var _sftpOpendir: (@convention(c) (UnsafeMutableRawPointer?, UnsafePointer<CChar>?) -> UnsafeMutableRawPointer?)? = nil
+    private var _sftpReaddir: (@convention(c) (UnsafeMutableRawPointer?, UnsafeMutablePointer<CChar>?, Int, UnsafeMutableRawPointer?) -> Int32)? = nil
+    private var _sftpClosedir: (@convention(c) (UnsafeMutableRawPointer?) -> Int32)? = nil
+    private var _sftpUnlink: (@convention(c) (UnsafeMutableRawPointer?, UnsafePointer<CChar>?) -> Int32)? = nil
+    private var _sftpRename: (@convention(c) (UnsafeMutableRawPointer?, UnsafePointer<CChar>?, UnsafePointer<CChar>?) -> Int32)? = nil
+    private var _sftpMkdir: (@convention(c) (UnsafeMutableRawPointer?, UnsafePointer<CChar>?, Int64) -> Int32)? = nil
+    private var _sftpStat: (@convention(c) (UnsafeMutableRawPointer?, UnsafePointer<CChar>?, UnsafeMutableRawPointer?) -> Int32)? = nil
+
+    private func loadSftpSymbols(_ h: UnsafeMutableRawPointer) {
+        _sftpInit    = unsafeBitCast(dlsym(h, "libssh2_sftp_init"), to: type(of: _sftpInit!))
+        _sftpShutdown = unsafeBitCast(dlsym(h, "libssh2_sftp_shutdown"), to: type(of: _sftpShutdown!))
+        _sftpOpen    = unsafeBitCast(dlsym(h, "libssh2_sftp_open"), to: type(of: _sftpOpen!))
+        _sftpRead    = unsafeBitCast(dlsym(h, "libssh2_sftp_read"), to: type(of: _sftpRead!))
+        _sftpWrite   = unsafeBitCast(dlsym(h, "libssh2_sftp_write"), to: type(of: _sftpWrite!))
+        _sftpClose   = unsafeBitCast(dlsym(h, "libssh2_sftp_close"), to: type(of: _sftpClose!))
+        _sftpOpendir = unsafeBitCast(dlsym(h, "libssh2_sftp_open_ex"), to: type(of: _sftpOpendir!))
+        _sftpReaddir = unsafeBitCast(dlsym(h, "libssh2_sftp_readdir"), to: type(of: _sftpReaddir!))
+        _sftpClosedir = unsafeBitCast(dlsym(h, "libssh2_sftp_close"), to: type(of: _sftpClosedir!))
+        _sftpUnlink  = unsafeBitCast(dlsym(h, "libssh2_sftp_unlink"), to: type(of: _sftpUnlink!))
+        _sftpRename  = unsafeBitCast(dlsym(h, "libssh2_sftp_rename"), to: type(of: _sftpRename!))
+        _sftpMkdir   = unsafeBitCast(dlsym(h, "libssh2_sftp_mkdir"), to: type(of: _sftpMkdir!))
+        _sftpStat    = unsafeBitCast(dlsym(h, "libssh2_sftp_stat"), to: type(of: _sftpStat!))
+    }
+
+    /// List files in remote directory
+    func listDirectory(_ path: String) -> [RemoteFile] {
+        guard let s = session, let initFn = _sftpInit,
+              let sftp = initFn(s) else { return [] }
+        defer { _sftpShutdown?(sftp) }
+
+        guard let opendirFn = _sftpOpendir,
+              let dir = opendirFn(sftp, path) else { return [] }
+        defer { _sftpClosedir?(dir) }
+
+        var files: [RemoteFile] = []
+        var buf = [CChar](repeating: 0, count: 512)
+        var attrs = LIBSSH2_SFTP_ATTRIBUTES()
+
+        while let readdirFn = _sftpReaddir, readdirFn(dir, &buf, 512, &attrs) > 0 {
+            let name = String(cString: buf)
+            if name == "." || name == ".." { continue }
+            let isDir = (attrs.flags & LIBSSH2_SFTP_ATTR_PERMISSIONS) != 0
+                && (attrs.permissions & LIBSSH2_SFTP_S_IFDIR) != 0
+            files.append(RemoteFile(
+                name: name, path: name,
+                isDirectory: isDir, isSymlink: false,
+                size: Int64(attrs.filesize),
+                permissions: String(format: "%o", attrs.permissions),
+                modificationDate: "\(attrs.mtime)"
+            ))
+        }
+        return files
+    }
+
+    /// Download a file from remote to local path
+    func downloadFile(_ remotePath: String, to localPath: String) -> Bool {
+        guard let s = session, let initFn = _sftpInit,
+              let sftp = initFn(s) else { return false }
+        defer { _sftpShutdown?(sftp) }
+
+        guard let openFn = _sftpOpen,
+              let readFn = _sftpRead,
+              let closeFn = _sftpClose else { return false }
+
+        let handle = openFn(sftp, remotePath,
+            UInt64(LIBSSH2_FXF_READ), 0, LIBSSH2_SFTP_OPENFILE)
+        guard let handle = handle else { return false }
+        defer { closeFn(handle) }
+
+        let fileData = NSMutableData()
+        var buf = [CChar](repeating: 0, count: 32768)
+        while true {
+            let n = readFn(handle, &buf, 32768)
+            if n > 0 { fileData.append(buf, length: n) }
+            else if n == 0 { break }
+            else if n < 0 { return false }
+        }
+        return fileData.write(toFile: localPath, atomically: true)
+    }
+
+    /// Upload a local file to remote
+    func uploadFile(_ localPath: String, to remotePath: String) -> Bool {
+        guard let s = session, let initFn = _sftpInit,
+              let sftp = initFn(s) else { return false }
+        defer { _sftpShutdown?(sftp) }
+
+        guard let openFn = _sftpOpen,
+              let writeFn = _sftpWrite,
+              let closeFn = _sftpClose,
+              let data = NSData(contentsOfFile: localPath) else { return false }
+
+        let handle = openFn(sftp, remotePath,
+            UInt64(LIBSSH2_FXF_WRITE | LIBSSH2_FXF_CREAT | LIBSSH2_FXF_TRUNC),
+            Int64(LIBSSH2_SFTP_S_IRUSR | LIBSSH2_SFTP_S_IWUSR | LIBSSH2_SFTP_S_IRGRP | LIBSSH2_SFTP_S_IROTH),
+            LIBSSH2_SFTP_OPENFILE)
+        guard let handle = handle else { return false }
+        defer { closeFn(handle) }
+
+        let ptr = data.bytes.bindMemory(to: CChar.self, capacity: data.count)
+        return writeFn(handle, ptr, data.count) == data.count
+    }
+
     deinit { disconnect(); if let h = dylib { dlclose(h) } }
+}
+
+// libssh2 SFTP constants
+private let LIBSSH2_FXF_READ: Int32 = 0x0
+private let LIBSSH2_FXF_WRITE: Int32 = 0x1
+private let LIBSSH2_FXF_CREAT: Int32 = 0x8
+private let LIBSSH2_FXF_TRUNC: Int32 = 0x10
+private let LIBSSH2_SFTP_OPENFILE: Int32 = 0
+private let LIBSSH2_SFTP_ATTR_PERMISSIONS: UInt64 = 0x08
+private let LIBSSH2_SFTP_S_IFDIR: UInt64 = 0o040000
+private let LIBSSH2_SFTP_S_IRUSR: Int64 = 0o0400
+private let LIBSSH2_SFTP_S_IWUSR: Int64 = 0o0200
+private let LIBSSH2_SFTP_S_IRGRP: Int64 = 0o0040
+private let LIBSSH2_SFTP_S_IROTH: Int64 = 0o0004
+
+struct LIBSSH2_SFTP_ATTRIBUTES {
+    var flags: UInt64 = 0
+    var filesize: UInt64 = 0
+    var uid: UInt64 = 0; var gid: UInt64 = 0
+    var permissions: UInt64 = 0
+    var atime: UInt64 = 0; var mtime: UInt64 = 0
 }

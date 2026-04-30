@@ -3,6 +3,7 @@ import SwiftUI
 /// SFTP file browser panel for remote file management
 struct SFTPPanel: View {
     let config: SessionConfig
+    var nativeClient: Libssh2Client? = nil
     @State private var currentPath = "~"
     @State private var files: [RemoteFile] = []
     @State private var isLoading = false
@@ -13,7 +14,7 @@ struct SFTPPanel: View {
 
     enum SortOrder { case name, size, date }
 
-    private var service: SFTPService { SFTPService(config: config) }
+    private var service: SFTPService { SFTPService(config: config, nativeClient: nativeClient) }
 
     var body: some View {
         VStack(spacing: 0) {

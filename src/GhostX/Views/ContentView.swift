@@ -65,7 +65,7 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showSFTP) {
             if let activeTab = tabManager.tabs.first(where: { $0.id == tabManager.activeTabID }) {
-                SFTPPanel(config: activeTab.config)
+                SFTPPanel(config: activeTab.config, nativeClient: activeTab.client.nativeClient)
             }
         }
         .sheet(isPresented: $showTriggers) {

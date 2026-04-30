@@ -1,25 +1,35 @@
 import Foundation
 
-/// Basic SFTP operations using system sftp command
-/// In production, replace with libssh2 SFTP API
+/// SFTP operations using native libssh2 or system sftp fallback
 final class SFTPService {
     private let host: String
     private let port: UInt16
     private let username: String
     private let privateKeyPath: String?
+    private var nativeClient: Libssh2Client?
     private var sftpProcess: Process?
     private var outputPipe: Pipe?
     private var inputPipe: Pipe?
 
-    init(config: SessionConfig) {
+    init(config: SessionConfig, nativeClient: Libssh2Client? = nil) {
         self.host = config.host
         self.port = config.port
         self.username = config.username
         self.privateKeyPath = config.privateKeyPath
+        self.nativeClient = nativeClient
     }
 
     /// List files in remote directory
     func listDirectory(_ path: String, completion: @escaping ([RemoteFile]) -> Void) {
+        if let native = nativeClient, native.isConnected {
+            let files = native.listDirectory(path)
+            DispatchQueue.main.async { completion(files) }
+            return
+        }
+        listViaSftpCommand(path, completion: completion)
+    }
+
+    private func listViaSftpCommand(_ path: String, completion: @escaping ([RemoteFile]) -> Void) {
         let args = buildArgs()
             + ["-b", "-",  // batch mode
                "\(username)@\(host)"]
@@ -54,9 +64,17 @@ final class SFTPService {
         inPipe.fileHandleForWriting.write(cmd.data(using: .utf8)!)
     }
 
-    /// Download a file
     func download(_ remotePath: String, to localURL: URL, progress: @escaping (Double) -> Void,
                   completion: @escaping (Bool) -> Void) {
+        if let native = nativeClient, native.isConnected {
+            let ok = native.downloadFile(remotePath, to: localURL.path)
+            DispatchQueue.main.async { completion(ok) }
+            return
+        }
+        downloadViaSftp(remotePath, to: localURL, completion: completion)
+    }
+
+    private func downloadViaSftp(_ remotePath: String, to localURL: URL, completion: @escaping (Bool) -> Void) {
         let args = buildArgs()
             + ["-b", "-",
                "\(username)@\(host)"]
@@ -81,8 +99,16 @@ final class SFTPService {
         inPipe.fileHandleForWriting.write(cmd.data(using: .utf8)!)
     }
 
-    /// Upload a file
     func upload(_ localPath: String, to remotePath: String, completion: @escaping (Bool) -> Void) {
+        if let native = nativeClient, native.isConnected {
+            let ok = native.uploadFile(localPath, to: remotePath)
+            DispatchQueue.main.async { completion(ok) }
+            return
+        }
+        uploadViaSftp(localPath, to: remotePath, completion: completion)
+    }
+
+    private func uploadViaSftp(_ localPath: String, to remotePath: String, completion: @escaping (Bool) -> Void) {
         let args = buildArgs()
             + ["-b", "-",
                "\(username)@\(host)"]

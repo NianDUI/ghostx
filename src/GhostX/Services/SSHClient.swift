@@ -6,7 +6,7 @@ final class SSHClient: ObservableObject {
     private var outputPipe: Pipe?
     private var inputPipe: Pipe?
     private var errorPipe: Pipe?
-    private var nativeClient: Libssh2Client?
+    private var _nativeClient: Libssh2Client?
 
     let config: SessionConfig
     let credential: Credential?
@@ -35,7 +35,7 @@ final class SSHClient: ObservableObject {
     /// Wrap a Libssh2Client to provide the same interface
     convenience init(native: Libssh2Client) {
         self.init(config: native.config, credential: nil)
-        self.nativeClient = native
+        self.storedNativeClient = native
         native.onOutput = { [weak self] data in self?.onOutput?(data) }
         native.onDisconnect = { [weak self] code in
             self?.isConnected = false
@@ -45,9 +45,11 @@ final class SSHClient: ObservableObject {
     }
 
     var isNative: Bool { nativeClient != nil }
+    var nativeClient: Libssh2Client? { storedNativeClient }
+    private var storedNativeClient: Libssh2Client?
 
     func connect(terminalType: String = "xterm-256color") async throws {
-        if let native = nativeClient {
+        if let native = storedNativeClient {
             native.connect()
             isConnected = native.isConnected
             connectionState = native.state
@@ -144,18 +146,18 @@ final class SSHClient: ObservableObject {
     }
 
     func send(_ text: String) {
-        if let native = nativeClient { native.send(text); return }
+        if let native = _nativeClient { native.send(text); return }
         guard let data = text.data(using: .utf8) else { return }
         inputPipe?.fileHandleForWriting.write(data)
     }
 
     func send(_ data: Data) {
-        if let native = nativeClient { native.send(data); return }
+        if let native = _nativeClient { native.send(data); return }
         inputPipe?.fileHandleForWriting.write(data)
     }
 
     func resize(cols: Int, rows: Int) {
-        if let native = nativeClient { native.resize(cols: cols, rows: rows); return }
+        if let native = _nativeClient { native.resize(cols: cols, rows: rows); return }
         guard let pid = process?.processIdentifier else { return }
         // Send SIGWINCH-equivalent via ioctl
         var winSize = winsize(
@@ -175,7 +177,7 @@ final class SSHClient: ObservableObject {
     }
 
     func disconnect() {
-        if let native = nativeClient { native.disconnect(); return }
+        if let native = _nativeClient { native.disconnect(); return }
         send("exit\n")
         DispatchQueue.global().asyncAfter(deadline: .now() + 2) { [weak self] in
             if self?.process?.isRunning == true { self?.process?.terminate() }
