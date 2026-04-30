@@ -172,7 +172,7 @@ struct TunnelEditSheet: View {
 
     var body: some View {
         VStack(spacing: 12) {
-            Text(editing != nil ? "Edit Tunnel" : "New Tunnel")
+            Text(editing != nil ? L10n.editingTunnel : L10n.newTunnel)
                 .font(.title2)
 
             TextField(L10n.name, text: $name)

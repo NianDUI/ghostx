@@ -87,7 +87,7 @@ struct ThemeEditorView: View {
 
     var body: some View {
         VStack(spacing: 12) {
-            Text("New Theme")
+            Text(L10n.newThemeTitle)
                 .font(.title2)
 
             HStack {

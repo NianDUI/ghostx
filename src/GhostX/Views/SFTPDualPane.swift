@@ -59,7 +59,7 @@ struct SFTPDualPane: View {
                 }
                 .padding(.horizontal, 8).padding(.vertical, 2)
 
-                TextField("", text: $localPath, prompt: Text("/path"))
+                TextField("", text: $localPath, prompt: Text(L10n.localPath))
                     .font(.caption).textFieldStyle(.roundedBorder)
                     .padding(.horizontal, 8)
                     .onSubmit { loadLocal() }
@@ -117,7 +117,7 @@ struct SFTPDualPane: View {
             }
             .padding(.horizontal, 8).padding(.vertical, 2)
 
-            TextField("", text: $remotePath, prompt: Text("/remote/path"))
+            TextField("", text: $remotePath, prompt: Text(L10n.remotePath))
                 .font(.caption).textFieldStyle(.roundedBorder)
                 .padding(.horizontal, 8)
                 .onSubmit { loadRemote() }

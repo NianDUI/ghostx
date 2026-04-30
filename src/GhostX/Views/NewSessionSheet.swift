@@ -24,12 +24,12 @@ struct NewSessionSheet: View {
 
     var body: some View {
         VStack(spacing: 16) {
-            Text("New SSH Session")
+            Text(L10n.newSession)
                 .font(.title2)
                 .padding(.top, 20)
 
             Form {
-                TextField("Session Name:", text: $name, prompt: Text("Optional label"))
+                TextField(L10n.sessionName, text: $name, prompt: Text(L10n.optionalLabel))
 
                 HStack {
                     Picker(L10n.protocolLabel, selection: $protocolType) {
@@ -57,7 +57,7 @@ struct NewSessionSheet: View {
 
                 if !authManager.profiles.isEmpty {
                     Picker(L10n.authProfile, selection: $selectedAuthProfile) {
-                        Text("None").tag(nil as UUID?)
+                        Text(L10n.none).tag(nil as UUID?)
                         ForEach(authManager.profiles) { p in
                             Text(p.name).tag(p.id as UUID?)
                         }
@@ -85,16 +85,16 @@ struct NewSessionSheet: View {
                             Image(systemName: "folder")
                         }
                         .buttonStyle(.borderless)
-                        .help("Browse for private key")
+                        .help(L10n.browseForKey)
                         Button(action: generateKey) {
                             Image(systemName: "key")
                         }
                         .buttonStyle(.borderless)
-                        .help("Generate new key pair")
+                        .help(L10n.generateKeyPair)
                     }
                 }
 
-                TextField("Login Script:", text: $loginScript, prompt: Text("Commands to run after login"))
+                TextField(L10n.loginScript, text: $loginScript, prompt: Text(L10n.loginScriptDesc))
 
                 // Proxy settings
                 DisclosureGroup("Proxy Settings") {

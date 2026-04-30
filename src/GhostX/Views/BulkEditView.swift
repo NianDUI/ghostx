@@ -34,7 +34,7 @@ struct BulkEditView: View {
                 Section(L10n.keepAlive) {
                     Toggle("Set keep alive", isOn: $setKeepAlive)
                     if setKeepAlive {
-                        TextField("Interval (s)", text: $keepAliveValue, prompt: Text("60"))
+                        TextField(L10n.intervalSec, text: $keepAliveValue, prompt: Text("60"))
                     }
                 }
 

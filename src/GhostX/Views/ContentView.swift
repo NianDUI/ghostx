@@ -106,30 +106,30 @@ struct ContentView: View {
             ToolbarItemGroup {
                 Button(action: { showComposePanel.toggle() }) {
                     Image(systemName: "rectangle.3.group")
-                        .help("Toggle Compose Panel")
+                        
                 }
                 Button(action: { showSFTP = true }) {
                     Image(systemName: "folder")
-                        .help("SFTP File Browser")
+                        
                 }
                 Button(action: { showTriggers = true }) {
                     Image(systemName: "bolt")
-                        .help("Trigger Configuration")
+                        
                 }
                 Button(action: { showThemes = true }) {
                     Image(systemName: "paintpalette")
-                        .help("Terminal Themes")
+                        
                 }
                 Button(action: { showTunnels = true }) {
                     Image(systemName: "point.3.connected.trianglepath.dotted")
-                        .help("Port Forwarding & Tunnels")
+                        
                 }
                 Button(action: {
                     bulkEditIDs = Set(sessionRepo.sessions.map(\.id))
                     showBulkEdit = true
                 }) {
                     Image(systemName: "checklist")
-                        .help("Bulk Edit Sessions")
+                        
                 }
                 Button(action: {
                     // Print active terminal to PDF
@@ -139,7 +139,7 @@ struct ContentView: View {
                     }
                 }) {
                     Image(systemName: "printer")
-                        .help("Print Terminal")
+                        
                 }
             }
         }
@@ -358,12 +358,12 @@ struct QuickConnectBar: View {
             Button(action: quickConnect) {
                 Image(systemName: "arrow.right")
             }
-            .help("Quick Connect")
+            
 
             Button(action: { showNewSession = true }) {
                 Image(systemName: "plus")
             }
-            .help("New Session")
+            
         }
         .sheet(isPresented: $showNewSession) {
             NewSessionSheet(repo: repo, tabManager: tabManager, isPresented: $showNewSession)

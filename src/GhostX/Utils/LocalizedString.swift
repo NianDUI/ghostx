@@ -157,4 +157,21 @@ enum L10n {
     static var sessionsGroups: String { isZh ? "导入了会话" : "Imported" }
     static var inGroups: String { isZh ? "个分组" : "groups" }
     static var ok: String { isZh ? "确定" : "OK" }
+    static var none: String { isZh ? "无" : "None" }
+    static var optionalLabel: String { isZh ? "可选标签" : "Optional label" }
+    static var hostPlaceholder: String { isZh ? "192.168.1.1" : "192.168.1.1" }
+    static var loginScriptDesc: String { isZh ? "登录后执行的命令" : "Commands to run after login" }
+    static var intervalSec: String { isZh ? "间隔 (秒)" : "Interval (s)" }
+    static var remotePath: String { isZh ? "/远程/路径" : "/remote/path" }
+    static var localPath: String { isZh ? "/路径" : "/path" }
+    static var noTerminal: String { isZh ? "无终端" : "No terminal" }
+    static var totalSize: String { isZh ? "总计" : "total" }
+    static var newThemeTitle: String { isZh ? "新建主题" : "New Theme" }
+    static var editingTunnel: String { isZh ? "编辑隧道" : "Edit Tunnel" }
+    static var newTunnel: String { isZh ? "新建隧道" : "New Tunnel" }
+    static var updateTunnel: String { isZh ? "更新" : "Update" }
+    static var browseForKey: String { isZh ? "浏览私钥" : "Browse for private key" }
+    static var generateKeyPair: String { isZh ? "生成新密钥对" : "Generate new key pair" }
+    static var exportAllJSON: String { isZh ? "导出全部为 JSON..." : "Export All as JSON..." }
+    static var printTerminal: String { isZh ? "打印终端" : "Print Terminal" }
 }

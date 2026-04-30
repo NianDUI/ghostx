@@ -144,11 +144,11 @@ struct SplitTreeView: View {
                         Button(action: { splitManager.splitCurrent(direction: .horizontal, newTabID: tabID) }) {
                             Image(systemName: "rectangle.righthalf.inset.filled").font(.system(size: 8))
                         }
-                        .buttonStyle(.borderless).help("Split Horizontal")
+                        .buttonStyle(.borderless).help(L10n.splitH)
                         Button(action: { splitManager.splitCurrent(direction: .vertical, newTabID: tabID) }) {
                             Image(systemName: "rectangle.bottomhalf.inset.filled").font(.system(size: 8))
                         }
-                        .buttonStyle(.borderless).help("Split Vertical")
+                        .buttonStyle(.borderless).help(L10n.splitV)
                     }
                     .padding(2).opacity(0.5)
                 }
@@ -157,7 +157,7 @@ struct SplitTreeView: View {
         } else {
             VStack {
                 Image(systemName: "terminal").font(.system(size: 48)).foregroundColor(.secondary)
-                Text("No terminal").foregroundColor(.secondary)
+                Text(L10n.noTerminal).foregroundColor(.secondary)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity).background(Color.black)
         }
