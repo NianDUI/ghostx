@@ -223,7 +223,7 @@ class CommandBus {
 - [ ] Tab drag-to-reorder
 - [ ] Panel auto-hide with hover reveal
 - [ ] Drag-drop file upload in SFTP
-- [ ] Customizable word separators for double-click
+- [x] Customizable word separators for double-click
 - [~] Kerberos/GSSAPI — WON'T IMPLEMENT
 - [~] PKCS#11 smart card — WON'T IMPLEMENT
 

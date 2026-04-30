@@ -19,33 +19,53 @@ struct ContentView: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            // Left sidebar: Session tree + quick connect (collapsible)
-            if !sidebarCollapsed {
-                VStack(spacing: 0) {
-                    SessionSidebar(
-                        repo: sessionRepo,
-                        tabManager: tabManager,
-                        selectedGroupID: $selectedGroupID
-                    )
+            // Left sidebar with auto-hide
+            ZStack(alignment: .leading) {
+                // Sidebar content (auto-hidden)
+                if !sidebarCollapsed {
+                    HStack(spacing: 0) {
+                        VStack(spacing: 0) {
+                            SessionSidebar(
+                                repo: sessionRepo,
+                                tabManager: tabManager,
+                                selectedGroupID: $selectedGroupID
+                            )
+                        }
+                        .frame(width: sidebarWidth)
+                        .background(Color(NSColor.windowBackgroundColor))
+                        Divider()
+                    }
+                    .transition(.move(edge: .leading))
+                    .onHover { hovering in
+                        // Auto-hide when mouse leaves sidebar area
+                        if !hovering {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    sidebarCollapsed = true
+                                }
+                            }
+                        }
+                    }
                 }
-                .frame(width: sidebarWidth)
-                .frame(minHeight: 400)
-                .background(Color(NSColor.windowBackgroundColor))
-                Divider()
-            }
 
-            // Toggle sidebar button
-            VStack {
-                Button(action: { withAnimation { sidebarCollapsed.toggle() } }) {
-                    Image(systemName: sidebarCollapsed ? "sidebar.right" : "sidebar.left")
-                        .font(.system(size: 10))
+                // Hover zone + toggle button (always visible)
+                VStack {
+                    Button(action: { withAnimation(.easeInOut(duration: 0.2)) { sidebarCollapsed.toggle() } }) {
+                        Image(systemName: sidebarCollapsed ? "sidebar.right" : "sidebar.left")
+                            .font(.system(size: 10))
+                    }
+                    .buttonStyle(.borderless)
+                    .padding(.vertical, 4)
+                    Spacer()
                 }
-                .buttonStyle(.borderless)
-                .padding(.vertical, 4)
-                Spacer()
+                .frame(width: 16)
+                .background(Color(NSColor.controlBackgroundColor).opacity(0.3))
+                .onHover { hovering in
+                    if hovering && sidebarCollapsed {
+                        withAnimation(.easeInOut(duration: 0.15)) { sidebarCollapsed = false }
+                    }
+                }
             }
-            .frame(width: sidebarCollapsed ? 20 : 4)
-            .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
 
             // Right: Terminal area with splits + optional bottom panel
             VSplitView {
