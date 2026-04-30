@@ -14,9 +14,12 @@ struct SessionConfig: Identifiable, Codable, Hashable {
     var proxy: ProxyConfig?
     var loginScript: String?
     var terminalType: String = "xterm-256color"
+    var tags: [String] = []
     var notes: String?
     var createdAt: Date = Date()
     var updatedAt: Date = Date()
+    var lastConnectedAt: Date?
+    var connectCount: Int = 0
 
     // MARK: - Computed
     var displayTitle: String { name.isEmpty ? "\(username)@\(host)" : name }

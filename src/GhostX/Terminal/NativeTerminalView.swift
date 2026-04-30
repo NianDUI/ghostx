@@ -252,10 +252,42 @@ final class NativeTerminalView: NSView {
         // Handle modifier-only events
     }
 
-    // MARK: - Mouse
+    // MARK: - Mouse & Context Menu
 
     override func mouseDown(with event: NSEvent) {
         window?.makeFirstResponder(self)
+    }
+
+    override func rightMouseDown(with event: NSEvent) {
+        let menu = NSMenu()
+        menu.addItem(NSMenuItem(title: "Copy", action: #selector(copyToClipboard), keyEquivalent: "c"))
+        menu.addItem(NSMenuItem(title: "Paste", action: #selector(pasteFromClipboard), keyEquivalent: "v"))
+        menu.addItem(.separator())
+        menu.addItem(NSMenuItem(title: "Select All", action: #selector(selectAllContent), keyEquivalent: "a"))
+        NSMenu.popUpContextMenu(menu, with: event, for: self)
+    }
+
+    override func otherMouseDown(with event: NSEvent) {
+        // Middle button (buttonNumber 2) — paste by default
+        if event.buttonNumber == 2 {
+            pasteFromClipboard()
+        }
+    }
+
+    @objc private func copyToClipboard() {
+        let pb = NSPasteboard.general
+        pb.clearContents()
+        pb.setString(buffer.snapshot().grid.flatMap { row in row.map { String($0.character) } + ["\n"] }.joined(), forType: .string)
+    }
+
+    @objc private func pasteFromClipboard() {
+        guard let str = NSPasteboard.general.string(forType: .string) else { return }
+        onKeyPress?(str)
+    }
+
+    @objc private func selectAllContent() {
+        // Trigger select_all in terminal
+        onKeyPress?("\u{1b}[1;1H\u{1b}[?47h")  // simplified select-all sequence
     }
 
     override func scrollWheel(with event: NSEvent) {

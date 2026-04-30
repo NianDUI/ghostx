@@ -11,18 +11,39 @@ struct ContentView: View {
     @State private var showTriggers = false
     @State private var showThemes = false
     @State private var showTunnels = false
+    @State private var sidebarCollapsed = false
+    @State private var sidebarWidth: CGFloat = 260
     @State private var selectedGroupID: UUID?
 
     var body: some View {
-        HSplitView {
-            // Left sidebar: Session tree + quick connect
-            SessionSidebar(
-                repo: sessionRepo,
-                tabManager: tabManager,
-                selectedGroupID: $selectedGroupID
-            )
-            .frame(minWidth: 200, idealWidth: 260)
-            .frame(maxWidth: 350)
+        HStack(spacing: 0) {
+            // Left sidebar: Session tree + quick connect (collapsible)
+            if !sidebarCollapsed {
+                VStack(spacing: 0) {
+                    SessionSidebar(
+                        repo: sessionRepo,
+                        tabManager: tabManager,
+                        selectedGroupID: $selectedGroupID
+                    )
+                }
+                .frame(width: sidebarWidth)
+                .frame(minHeight: 400)
+                .background(Color(NSColor.windowBackgroundColor))
+                Divider()
+            }
+
+            // Toggle sidebar button
+            VStack {
+                Button(action: { withAnimation { sidebarCollapsed.toggle() } }) {
+                    Image(systemName: sidebarCollapsed ? "sidebar.right" : "sidebar.left")
+                        .font(.system(size: 10))
+                }
+                .buttonStyle(.borderless)
+                .padding(.vertical, 4)
+                Spacer()
+            }
+            .frame(width: sidebarCollapsed ? 20 : 4)
+            .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
 
             // Right: Terminal area with splits + optional bottom panel
             VSplitView {
