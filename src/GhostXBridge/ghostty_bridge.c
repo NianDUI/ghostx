@@ -188,3 +188,11 @@ void ghostx_key_encoder_free(void* encoder) {
 void ghostx_key_encoder_sync(void* encoder, void* terminal) {
     ghostty_key_encoder_setopt_from_terminal((GhosttyKeyEncoder)encoder, (GhosttyTerminal)terminal);
 }
+
+void ghostx_terminal_scroll_viewport(void* terminal, int32_t delta) {
+    GhosttyTerminalScrollViewport sv = {
+        .tag = GHOSTTY_SCROLL_VIEWPORT_DELTA,
+        .value = { .delta = delta },
+    };
+    ghostty_terminal_scroll_viewport((GhosttyTerminal)terminal, sv);
+}

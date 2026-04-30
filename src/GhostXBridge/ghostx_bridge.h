@@ -39,5 +39,6 @@ uint32_t ghostx_cell_flags(void* cells);
 void* ghostx_key_encoder_new(void);
 void  ghostx_key_encoder_free(void* encoder);
 void  ghostx_key_encoder_sync(void* encoder, void* terminal);
+void  ghostx_terminal_scroll_viewport(void* terminal, int32_t delta);
 
 #endif

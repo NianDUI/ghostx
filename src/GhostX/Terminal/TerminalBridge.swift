@@ -38,9 +38,10 @@ final class TerminalBridge {
             fn_set_title_cb?(t, { ctxPtr, ptr, len in
                 guard let ctxPtr, let ptr else { return }
                 let ts = String(data: Data(bytes: ptr, count: len), encoding: .utf8) ?? ""
-                let b = Unmanaged<TerminalBridge>.fromOpaque(ctxPtr).takeUnretainedValue()
-                b.title = ts
-                DispatchQueue.main.async { b.onTitleChanged?(ts) }
+                DispatchQueue.main.async {
+                    let b = Unmanaged<TerminalBridge>.fromOpaque(ctxPtr).takeUnretainedValue()
+                    b.title = ts; b.onTitleChanged?(ts)
+                }
             })
         }
     }
@@ -63,6 +64,10 @@ final class TerminalBridge {
 
     func scroll(delta: Int) {
         scrollOffset = max(0, scrollOffset + delta)
+        // Notify ghostty terminal to scroll its internal viewport
+        if let t = terminalPtr {
+            fn_scroll_viewport?(t, Int32(-delta))
+        }
     }
 
     func resetScroll() { scrollOffset = 0 }
@@ -83,6 +88,9 @@ final class TerminalBridge {
         let rowCallback: @convention(c) (UnsafeMutableRawPointer?, UInt32, UnsafeMutableRawPointer?) -> Void = {
             guard let ctx = $0, let cellsPtr = $2 else { return }
             let bridge = Unmanaged<TerminalBridge>.fromOpaque(ctx).takeUnretainedValue()
+            // Apply scroll offset — skip rows before offset
+            let displayRow = Int($1) - bridge.scrollOffset
+            guard displayRow >= 0 else { return }
             var col: UInt32 = 0
             while bridge.fn_cells_next?(cellsPtr) == true {
                 let len = bridge.fn_cell_grapheme_len?(cellsPtr) ?? 0
@@ -96,7 +104,7 @@ final class TerminalBridge {
                     bridge.fn_cell_bg?(cellsPtr, &bgT.r, &bgT.g, &bgT.b)
                     let flags = bridge.fn_cell_flags?(cellsPtr) ?? 0
                     bridge.tempCells.append(TerminalCellData(
-                        row: Int($1), column: Int(col), character: ch,
+                        row: displayRow, column: Int(col), character: ch,
                         fg: ANSIColor.rgb(fgT.r, fgT.g, fgT.b),
                         bg: ANSIColor.rgb(bgT.r, bgT.g, bgT.b),
                         bold: (flags & 1) != 0, italic: (flags & 2) != 0, underline: (flags & 4) != 0))
@@ -131,6 +139,7 @@ final class TerminalBridge {
     private var fn_cell_bg: ((UnsafeMutableRawPointer?, UnsafeMutablePointer<UInt8>?, UnsafeMutablePointer<UInt8>?, UnsafeMutablePointer<UInt8>?) -> Void)?
     private var fn_get_rows: ((UnsafeMutableRawPointer?, UnsafeMutableRawPointer?, UnsafeMutableRawPointer?,
         @convention(c) (UnsafeMutableRawPointer?, UInt32, UnsafeMutableRawPointer?) -> Void, UnsafeMutableRawPointer?) -> Bool)?
+    private var fn_scroll_viewport: ((UnsafeMutableRawPointer?, Int32) -> Void)?
     private var fn_cell_flags: ((UnsafeMutableRawPointer?) -> UInt32)?
 
     private func loadDylib() {
@@ -143,6 +152,20 @@ final class TerminalBridge {
         for p in paths { if let p, (h = dlopen(p, RTLD_NOW)) != nil { break } }
         guard let h else { return }
         dylibHandle = h
+
+        // Verify ALL symbols used by the bridge before marking as loaded
+        let required = [
+            "ghostx_terminal_new", "ghostx_terminal_free", "ghostx_terminal_vt_write",
+            "ghostx_terminal_resize", "ghostx_terminal_set_write_pty_callback",
+            "ghostx_terminal_set_title_callback", "ghostx_terminal_scroll_viewport",
+            "ghostx_render_state_new", "ghostx_render_state_free", "ghostx_render_state_update",
+            "ghostx_row_iterator_new", "ghostx_row_cells_new",
+            "ghostx_row_iterator_free", "ghostx_row_cells_free",
+            "ghostx_render_state_get_rows", "ghostx_cells_next",
+            "ghostx_cell_grapheme_len", "ghostx_cell_graphemes",
+            "ghostx_cell_fg_color", "ghostx_cell_bg_color", "ghostx_cell_flags",
+        ]
+        for name in required { if dlsym(h, name) == nil { return } }
         dylibLoaded = true
 
         typealias T1 = @convention(c) (UInt16, UInt16, UInt32) -> UnsafeMutableRawPointer?
@@ -173,6 +196,7 @@ final class TerminalBridge {
         fn_row_iter_free = resolve(h, "ghostx_row_iterator_free")
         fn_row_cells_free = resolve(h, "ghostx_row_cells_free")
         fn_get_rows = resolve(h, "ghostx_render_state_get_rows")
+        fn_scroll_viewport = resolve(h, "ghostx_terminal_scroll_viewport")
         fn_cells_next = resolve(h, "ghostx_cells_next")
         fn_cell_grapheme_len = resolve(h, "ghostx_cell_grapheme_len")
         fn_cell_graphemes = resolve(h, "ghostx_cell_graphemes")
