@@ -107,6 +107,51 @@ final class GhosttyTerminalView: NSView {
     }
 
     override func mouseDown(with event: NSEvent) { window?.makeFirstResponder(self) }
+
+    override func rightMouseDown(with event: NSEvent) {
+        let menu = NSMenu()
+        menu.addItem(NSMenuItem(title: L10n.copy, action: #selector(copyContent), keyEquivalent: "c"))
+        menu.addItem(NSMenuItem(title: L10n.paste, action: #selector(pasteContent), keyEquivalent: "v"))
+        menu.addItem(.separator())
+        menu.addItem(NSMenuItem(title: L10n.selectAll, action: #selector(selectAllContent), keyEquivalent: "a"))
+        NSMenu.popUpContextMenu(menu, with: event, for: self)
+    }
+
+    override func otherMouseDown(with event: NSEvent) {
+        if event.buttonNumber == 2 { pasteContent() }  // middle-click paste
+    }
+
+    @objc private func copyContent() {
+        let cells = bridge.readScreenCells()
+            .sorted { $0.row != $1.row ? $0.row < $1.row : $0.column < $1.column }
+        var text = ""; var lastRow = 0; var lastCol: Int?
+        for c in cells {
+            // Blank lines between non-consecutive rows
+            while lastRow < c.row {
+                text += "\n"
+                lastRow += 1
+                lastCol = nil
+            }
+            // Pad to first column of row
+            if lastCol == nil && c.column > 0 { text += String(repeating: " ", count: c.column); lastCol = c.column }
+            // Pad between cells on same row
+            while let lc = lastCol, c.column > lc + 1 { text += " "; lastCol = lc + 1 }
+            text += c.character.isEmpty ? " " : c.character
+            lastRow = c.row; lastCol = c.column
+        }
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(text, forType: .string)
+    }
+
+    @objc private func pasteContent() {
+        guard let str = NSPasteboard.general.string(forType: .string) else { return }
+        onKeyPress?(str)
+    }
+
+    @objc private func selectAllContent() {
+        onKeyPress?("\u{1b}[1;1H")  // move cursor to top-left
+    }
+
     override func scrollWheel(with event: NSEvent) {
         let d = event.scrollingDeltaY
         if d != 0 { bridge.scroll(delta: d > 0 ? -3 : 3); needsDisplay = true }
