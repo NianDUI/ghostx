@@ -1,7 +1,9 @@
 import Foundation
 import CoreGraphics
 
-/// Terminal screen buffer - maintains a grid of character cells with SGR attributes
+/// DEPRECATED: TerminalBuffer is the fallback terminal state engine.
+/// Primary path: TerminalBridge (libghostty-vt).
+/// Retained for when ghostty dylib is unavailable.
 final class TerminalBuffer {
     struct Cell: Equatable {
         var character: Character = " "

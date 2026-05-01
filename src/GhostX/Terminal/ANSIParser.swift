@@ -24,7 +24,7 @@ enum ANSIEvent {
     case ignore
 }
 
-/// Streaming ANSI escape sequence parser
+/// DEPRECATED: Used by TerminalBuffer fallback. libghostty-vt handles VT parsing.
 enum ANSIParser {
     private enum State {
         case normal

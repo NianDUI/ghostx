@@ -2,6 +2,45 @@ import SwiftUI
 
 /// Manages terminal split panes — vertical/horizontal/matrix layout
 final class SplitManager: ObservableObject {
+    private let layoutKey = "GhostX.splitLayout"
+
+    func saveLayout() {
+        guard let data = try? JSONEncoder().encode(LayoutData(from: root)) else { return }
+        UserDefaults.standard.set(data, forKey: layoutKey)
+    }
+
+    func restoreLayout(tabManager: TabManager) -> Bool {
+        guard let data = UserDefaults.standard.data(forKey: layoutKey),
+              let layout = try? JSONDecoder().decode(LayoutData.self, from: data)
+        else { return false }
+        let node = layout.toNode(tabManager: tabManager)
+        root = node
+        focusedNodeID = node.tabID ?? node.children.first?.tabID
+        objectWillChange.send()
+        return true
+    }
+
+    private struct LayoutData: Codable {
+        var direction: String?
+        var tabIDs: [String] = []
+        var children: [LayoutData] = []
+
+        init(from node: SplitNode) {
+            if let d = node.direction { direction = d == .horizontal ? "H" : "V" }
+            tabIDs = node.tabID.map { [$0.uuidString] } ?? []
+            children = node.children.map { LayoutData(from: $0) }
+        }
+
+        func toNode(tabManager: TabManager) -> SplitNode {
+            if !children.isEmpty {
+                let dir: SplitDirection = direction == "H" ? .horizontal : .vertical
+                return .container(direction: dir,
+                    children: children.map { $0.toNode(tabManager: tabManager) })
+            }
+            let id = tabIDs.first.flatMap(UUID.init) ?? UUID()
+            return .leaf(tabID: id)
+        }
+    }
     enum SplitDirection { case horizontal, vertical }
 
     class SplitNode: Identifiable {
@@ -41,6 +80,7 @@ final class SplitManager: ObservableObject {
             root = .container(direction: direction, children: [root, .leaf(tabID: newTabID)])
             focusedNodeID = root.children.last?.id
         }
+        saveLayout()
         objectWillChange.send()
     }
 
@@ -68,6 +108,7 @@ final class SplitManager: ObservableObject {
 
     func closeTab(tabID: UUID) {
         closeInTree(tabID: tabID, in: &root)
+        saveLayout()
         objectWillChange.send()
     }
 

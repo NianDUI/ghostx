@@ -1,7 +1,8 @@
 import AppKit
 import SwiftUI
 
-/// Native AppKit view that renders a terminal buffer using CoreGraphics
+/// DEPRECATED: Use GhosttyTerminalView + TerminalBridge as primary renderer.
+/// This view is retained as fallback when libghostty-vt.dylib is not available.
 final class NativeTerminalView: NSView {
     private let buffer: TerminalBuffer
     private var font: CTFont
